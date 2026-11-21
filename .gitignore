@@ -1,0 +1,10 @@
+# Folder sementara & log debug
+error/
+*.log
+
+# Skill lokal agent (sudah terpasang global)
+.agents/
+
+# File sistem OS
+.DS_Store
+Thumbs.db
