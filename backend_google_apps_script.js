@@ -108,7 +108,8 @@ function setupDatabaseSheets() {
     [SHEET_NAMES.DESIGN_ORDERS]: [
       'ID', 'Tanggal_ISO', 'Tanggal_Tampil', 'Pembuat_Nama', 'Pembuat_Email', 'Pembuat_WA',
       'Produk', 'Jenis', 'Stores_CSV', 'Deadline', 'Link_Bahan', 'Link_Hasil',
-      'Keterangan', 'PIC', 'Status', 'ACC_Admin', 'Is_Urgent', 'Jumlah_Revisi', 'Log_Revisi_JSON'
+      'Keterangan', 'PIC', 'Status', 'ACC_Admin', 'Is_Urgent', 'Jumlah_Revisi', 'Log_Revisi_JSON',
+      'Waktu_Mulai', 'Waktu_Selesai'
     ],
     [SHEET_NAMES.STUDIO]: [
       'ID', 'User', 'Pembuat_Email', 'Tanggal', 'Jam_Mulai', 'Jam_Selesai',
@@ -216,7 +217,9 @@ function getInitialPortalData(actingEmail) {
       accAdmin: String(r.ACC_Admin).toUpperCase() === 'TRUE',
       isUrgent: String(r.Is_Urgent).toUpperCase() === 'TRUE',
       revisionCount: Number(r.Jumlah_Revisi) || 0,
-      revisionLogs: Array.isArray(parsedRevLogs) ? parsedRevLogs : []
+      revisionLogs: Array.isArray(parsedRevLogs) ? parsedRevLogs : [],
+      startedAt: normalizeCellTimestamp_(r.Waktu_Mulai),
+      completedAt: normalizeCellTimestamp_(r.Waktu_Selesai)
     };
   }).filter(o => o.id).reverse();
 
@@ -319,8 +322,10 @@ function saveNewDesignOrderToSheet(orderObj, actingEmail) {
   }
 
   const sheet = ss.getSheetByName(SHEET_NAMES.DESIGN_ORDERS);
+  ensureDesignOrderTimeColumns_(sheet);
   const nextId = orderObj.id || ('ORD-' + String(sheet.getLastRow() + 1).padStart(4, '0'));
   const storesCsv = Array.isArray(orderObj.stores) ? orderObj.stores.join(', ') : String(orderObj.stores || '');
+  const startedAt = orderObj.startedAt || getNowTimestampISO_();
 
   sheet.appendRow([
     nextId,
@@ -341,7 +346,9 @@ function saveNewDesignOrderToSheet(orderObj, actingEmail) {
     false,
     Boolean(orderObj.isUrgent),
     0,
-    '[]'
+    '[]',
+    startedAt,
+    ''
   ]);
 
   const prefix = orderObj.isUrgent ? '🔥 [URGENT] ORDER DESAIN BARU' : '🎨 ORDER DESAIN BARU';
@@ -365,6 +372,7 @@ function updateDesignOrderFields(orderId, updatesObj, actingEmail) {
   }
 
   const sheet = ss.getSheetByName(SHEET_NAMES.DESIGN_ORDERS);
+  ensureDesignOrderTimeColumns_(sheet);
   const data = sheet.getDataRange().getValues();
   const headers = data[0];
 
@@ -905,7 +913,9 @@ function importLegacyJobTracker(targetSheetNames) {
         accAdmin,
         isUrgent,
         0,
-        '[]'
+        '[]',
+        '',
+        ''
       ]);
       existingIds.add(recordId);
     }
@@ -1062,6 +1072,37 @@ function formatShortDeadlineID_(val) {
 
 function getTodayISO_() {
   return Utilities.formatDate(new Date(), Session.getScriptTimeZone() || 'Asia/Jakarta', 'yyyy-MM-dd');
+}
+
+function getNowTimestampISO_() {
+  return Utilities.formatDate(new Date(), Session.getScriptTimeZone() || 'Asia/Jakarta', "yyyy-MM-dd'T'HH:mm:ss");
+}
+
+function normalizeCellTimestamp_(val) {
+  if (!val) return '';
+  if (val instanceof Date && !isNaN(val.getTime())) {
+    return Utilities.formatDate(val, Session.getScriptTimeZone() || 'Asia/Jakarta', "yyyy-MM-dd'T'HH:mm:ss");
+  }
+  const str = String(val).trim();
+  if (!str) return '';
+  if (/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(str)) {
+    return str.replace(' ', 'T').slice(0, 19);
+  }
+  return str;
+}
+
+function ensureDesignOrderTimeColumns_(sheet) {
+  if (!sheet || sheet.getLastRow() < 1) return;
+  const lastCol = Math.max(sheet.getLastColumn(), 1);
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(h => String(h).trim());
+  const needed = ['Waktu_Mulai', 'Waktu_Selesai'];
+  let nextCol = lastCol + 1;
+  needed.forEach(colName => {
+    if (headers.indexOf(colName) === -1) {
+      sheet.getRange(1, nextCol).setValue(colName).setFontWeight('bold').setBackground('#eef2ff');
+      nextCol++;
+    }
+  });
 }
 
 function normalizeCellDateISO_(val) {

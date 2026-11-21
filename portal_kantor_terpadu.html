@@ -57,7 +57,7 @@
             from { opacity: 0; transform: translateY(6px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        /* Format Cetak Laporan Resmi Webmaster */
+        /* Format Cetak Laporan Resmi (Webmaster & Evaluasi Staff Desain) */
         @media print {
             body {
                 background: #ffffff !important;
@@ -77,13 +77,25 @@
                 margin: 0 !important;
                 max-width: 100% !important;
             }
-            #wm-report-section {
+            #wm-report-section,
+            #designer-eval-section {
                 border: none !important;
                 box-shadow: none !important;
                 border-radius: 0 !important;
             }
-            .print-only {
+            body:not(.printing-designer-eval) .print-only {
                 display: block !important;
+            }
+            body.printing-designer-eval .no-print-on-eval,
+            body.printing-designer-eval .print-only {
+                display: none !important;
+            }
+            body.printing-designer-eval .eval-print-only {
+                display: block !important;
+            }
+            body.printing-designer-eval .eval-print-block {
+                break-inside: avoid;
+                page-break-inside: avoid;
             }
             table {
                 width: 100% !important;
@@ -482,7 +494,7 @@
                 <section id="view-design" class="hidden space-y-8 fade-in">
                     
                     <!-- Role Banner Info -->
-                    <div id="design-role-banner" class="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div id="design-role-banner" class="no-print-on-eval bg-indigo-50 border border-indigo-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div class="flex items-center gap-3">
                             <div class="w-9 h-9 rounded-xl bg-brand-600 text-white flex items-center justify-center shrink-0">
                                 <i class="fa-solid fa-user-lock"></i>
@@ -498,7 +510,7 @@
                     </div>
 
                     <!-- BAGIAN 1: REKAPITULASI & RINGKASAN STATUS ORDER -->
-                    <div class="bg-slate-100/80 rounded-2xl border-2 border-slate-300/80 p-4 sm:p-5 space-y-4 shadow-xs">
+                    <div id="design-recap-section" class="no-print-on-eval bg-slate-100/80 rounded-2xl border-2 border-slate-300/80 p-4 sm:p-5 space-y-4 shadow-xs">
                         <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-300/70">
                             <div class="flex items-center gap-2.5">
                                 <span class="text-[10px] font-extrabold uppercase tracking-wider bg-slate-800 text-white px-2.5 py-1 rounded-lg">Bagian 1</span>
@@ -557,7 +569,7 @@
                     </div>
 
                     <!-- BAGIAN 2: PEMBUATAN ORDER JOB TRACKER BARU -->
-                    <div id="design-order-form-card" class="bg-white rounded-2xl border-2 border-brand-200 border-t-4 border-t-brand-600 shadow-sm overflow-hidden">
+                    <div id="design-order-form-card" class="no-print-on-eval bg-white rounded-2xl border-2 border-brand-200 border-t-4 border-t-brand-600 shadow-sm overflow-hidden">
                         <div class="p-5 sm:p-6 border-b-2 border-brand-100 bg-gradient-to-r from-brand-50 to-white flex flex-wrap items-center justify-between gap-2">
                             <div>
                                 <div class="flex items-center gap-2.5">
@@ -659,7 +671,7 @@
                     </div>
 
                     <!-- BAGIAN 3: ANTREAN & HISTORI JOB TRACKER V.2.0 -->
-                    <div class="bg-white rounded-2xl border-2 border-slate-300 border-t-4 border-t-slate-900 shadow-sm overflow-hidden">
+                    <div id="design-queue-section" class="no-print-on-eval bg-white rounded-2xl border-2 border-slate-300 border-t-4 border-t-slate-900 shadow-sm overflow-hidden">
                         <div class="p-5 sm:p-6 border-b-2 border-slate-200 bg-slate-50/70 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
                             <div>
                                 <div class="flex items-center gap-2.5">
@@ -741,6 +753,193 @@
                                     <!-- Diisi via JS -->
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+
+                    <!-- BAGIAN 4: EVALUASI STAFF DESAIN (KHUSUS KEPALA DIVISI DESAIN & WEBMASTER) -->
+                    <div id="designer-eval-section" class="hidden bg-white rounded-2xl border-2 border-purple-300 border-t-4 border-t-purple-700 shadow-sm overflow-hidden">
+                        <!-- Kop Laporan Resmi Evaluasi (Hanya tampil saat Print / PDF) -->
+                        <div class="eval-print-only hidden pb-4 mb-5 border-b-2 border-slate-900 px-1">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <h1 class="text-xl font-extrabold uppercase tracking-tight text-slate-900">LAPORAN EVALUASI KINERJA STAFF DESAIN</h1>
+                                    <p class="text-xs font-semibold text-slate-600 mt-0.5">JC PORTAL — Modul Job Tracker V.2.0 (Rekapitulasi Bulanan &amp; Ongoing)</p>
+                                </div>
+                                <div class="text-right text-[11px] text-slate-700 space-y-0.5">
+                                    <p><span class="font-bold">Dicetak oleh:</span> <span id="eval-print-by">Kepala Divisi Desain</span></p>
+                                    <p><span class="font-bold">Waktu Cetak:</span> <span id="eval-print-time">-</span></p>
+                                </div>
+                            </div>
+                            <div class="mt-3 pt-2 border-t border-slate-200 flex flex-wrap gap-6 text-[11px] text-slate-700">
+                                <p><span class="font-bold">Periode Evaluasi:</span> <span id="eval-print-period">-</span></p>
+                                <p><span class="font-bold">Filter Staff Desain:</span> <span id="eval-print-staff">Semua Staff Desain</span></p>
+                            </div>
+                        </div>
+
+                        <!-- Header & Kontrol Filter (Disembunyikan saat Print) -->
+                        <div class="no-print p-5 sm:p-6 border-b-2 border-purple-100 bg-gradient-to-r from-purple-50 to-white flex flex-col gap-4">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div>
+                                    <div class="flex items-center gap-2.5">
+                                        <span class="text-[10px] font-extrabold uppercase tracking-wider bg-purple-700 text-white px-2.5 py-1 rounded-lg">Bagian 4</span>
+                                        <h2 class="text-base font-extrabold text-slate-900">Evaluasi Kinerja Staff Desain (Bulanan / Ongoing)</h2>
+                                    </div>
+                                    <p class="text-xs text-slate-500 mt-1">Rekapitulasi beban kerja tiap staff desain, durasi pengerjaan dari antrean hingga selesai, serta daftar job belum selesai/pending/cancel.</p>
+                                </div>
+                                <button type="button" onclick="printDesignerEvalReport()" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold rounded-xl shadow-xs transition-colors shrink-0">
+                                    <i class="fa-solid fa-print"></i>
+                                    <span>Cetak Laporan Evaluasi / PDF</span>
+                                </button>
+                            </div>
+
+                            <div class="flex flex-wrap items-center gap-2.5">
+                                <select id="eval-filter-year" onchange="renderDesignerEvaluation()" class="text-xs font-semibold border border-purple-200 rounded-xl px-3 py-2 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                    <option value="ALL">Semua Tahun</option>
+                                </select>
+                                <select id="eval-filter-month" onchange="renderDesignerEvaluation()" class="text-xs font-semibold border border-purple-200 rounded-xl px-3 py-2 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                    <option value="ALL">Semua Bulan (Ongoing)</option>
+                                    <option value="01">Januari</option>
+                                    <option value="02">Februari</option>
+                                    <option value="03">Maret</option>
+                                    <option value="04">April</option>
+                                    <option value="05">Mei</option>
+                                    <option value="06">Juni</option>
+                                    <option value="07">Juli</option>
+                                    <option value="08">Agustus</option>
+                                    <option value="09">September</option>
+                                    <option value="10">Oktober</option>
+                                    <option value="11">November</option>
+                                    <option value="12">Desember</option>
+                                </select>
+                                <select id="eval-filter-staff" onchange="renderDesignerEvaluation()" class="text-xs font-semibold border border-purple-200 rounded-xl px-3 py-2 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                    <option value="ALL">Semua Staff Desain</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="p-5 sm:p-6 space-y-6">
+                            <!-- 4 Ringkasan KPI Evaluasi -->
+                            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5 eval-print-block">
+                                <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                                    <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Total Job Periode</p>
+                                    <p id="eval-kpi-total" class="text-2xl font-extrabold text-slate-900 mt-1">0</p>
+                                    <p id="eval-kpi-period-note" class="text-[11px] text-slate-400 mt-0.5">Periode terpilih</p>
+                                </div>
+                                <div class="p-4 rounded-xl bg-emerald-50/70 border border-emerald-200">
+                                    <p class="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Job Selesai</p>
+                                    <p id="eval-kpi-done" class="text-2xl font-extrabold text-emerald-700 mt-1">0</p>
+                                    <p id="eval-kpi-rate" class="text-[11px] text-emerald-600 font-semibold mt-0.5">0% tingkat selesai</p>
+                                </div>
+                                <div class="p-4 rounded-xl bg-indigo-50/70 border border-indigo-200">
+                                    <p class="text-[11px] font-bold uppercase tracking-wider text-indigo-700">Rata-Rata Durasi</p>
+                                    <p id="eval-kpi-avg-time" class="text-xl sm:text-2xl font-extrabold text-indigo-700 mt-1">-</p>
+                                    <p class="text-[11px] text-indigo-500 mt-0.5">Antrean dimulai → Selesai</p>
+                                </div>
+                                <div class="p-4 rounded-xl bg-rose-50/70 border border-rose-200">
+                                    <p class="text-[11px] font-bold uppercase tracking-wider text-rose-700">Belum Selesai / Pending / Cancel</p>
+                                    <p id="eval-kpi-open" class="text-2xl font-extrabold text-rose-700 mt-1">0</p>
+                                    <p class="text-[11px] text-rose-500 mt-0.5">Perlu pantauan &amp; evaluasi</p>
+                                </div>
+                            </div>
+
+                            <!-- A. Rekapitulasi Jumlah Job per Staff Desain -->
+                            <div class="space-y-2.5 eval-print-block">
+                                <div class="flex items-center justify-between">
+                                    <h3 class="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                                        <span class="w-6 h-6 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center text-xs font-bold">A</span>
+                                        <span>Rekapitulasi Job &amp; Rata-Rata Waktu per Staff Desain</span>
+                                    </h3>
+                                </div>
+                                <div class="overflow-x-auto rounded-xl border border-slate-200">
+                                    <table class="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr class="bg-slate-900 text-white text-[11px] font-bold uppercase tracking-wider">
+                                                <th class="py-3 px-3.5">Staff Desain (PIC)</th>
+                                                <th class="py-3 px-3 text-center">Total Job</th>
+                                                <th class="py-3 px-3 text-center">Selesai</th>
+                                                <th class="py-3 px-3 text-center">Antrean</th>
+                                                <th class="py-3 px-3 text-center">Pending</th>
+                                                <th class="py-3 px-3 text-center">Revisi</th>
+                                                <th class="py-3 px-3 text-center">Cancel</th>
+                                                <th class="py-3 px-3 text-center">Selesai (%)</th>
+                                                <th class="py-3 px-3.5">Rata-Rata Durasi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="eval-staff-recap-tbody" class="divide-y divide-slate-200 text-xs">
+                                            <!-- Diisi via JS -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- B. Rincian Waktu Pengerjaan Setiap Job -->
+                            <div class="space-y-2.5">
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <h3 class="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                                        <span class="w-6 h-6 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold">B</span>
+                                        <span>Rincian Waktu Pengerjaan Job (Mulai Antrean → Selesai)</span>
+                                    </h3>
+                                    <span class="text-[11px] text-slate-400">Durasi dihitung otomatis dari waktu antrean masuk hingga status Selesai</span>
+                                </div>
+                                <div class="overflow-x-auto rounded-xl border border-slate-200">
+                                    <table class="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr class="bg-slate-800 text-white text-[11px] font-bold uppercase tracking-wider">
+                                                <th class="py-3 px-3.5">ID &amp; Tanggal</th>
+                                                <th class="py-3 px-3.5">Produk &amp; Toko</th>
+                                                <th class="py-3 px-3">Staff Desain</th>
+                                                <th class="py-3 px-3">Mulai Antrean</th>
+                                                <th class="py-3 px-3">Waktu Selesai</th>
+                                                <th class="py-3 px-3">Durasi Pengerjaan</th>
+                                                <th class="py-3 px-3 text-center">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="eval-duration-tbody" class="divide-y divide-slate-200 text-xs">
+                                            <!-- Diisi via JS -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- C. Daftar Job Tidak Selesai, Pending, Revisi, atau Cancel -->
+                            <div class="space-y-2.5 eval-print-block">
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <h3 class="text-sm font-extrabold text-rose-900 flex items-center gap-2">
+                                        <span class="w-6 h-6 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center text-xs font-bold">C</span>
+                                        <span>Daftar Job Belum Selesai, Pending, Revisi, atau Cancel</span>
+                                    </h3>
+                                    <span id="eval-unfinished-count-badge" class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-700">0 Job</span>
+                                </div>
+                                <div class="overflow-x-auto rounded-xl border border-rose-200">
+                                    <table class="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr class="bg-rose-900 text-white text-[11px] font-bold uppercase tracking-wider">
+                                                <th class="py-3 px-3.5">ID &amp; Tanggal</th>
+                                                <th class="py-3 px-3.5">Produk &amp; Keterangan</th>
+                                                <th class="py-3 px-3">Staff Desain</th>
+                                                <th class="py-3 px-3">Deadline</th>
+                                                <th class="py-3 px-3">Durasi Berjalan</th>
+                                                <th class="py-3 px-3 text-center">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="eval-unfinished-tbody" class="divide-y divide-rose-100 text-xs">
+                                            <!-- Diisi via JS -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Blok Tanda Tangan Cetak Resmi -->
+                            <div class="eval-print-only hidden pt-8 mt-6 border-t border-slate-300">
+                                <div class="flex justify-end">
+                                    <div class="text-center w-60 text-xs text-slate-700">
+                                        <p>Mengetahui,</p>
+                                        <p class="font-bold mt-0.5">Kepala Divisi Desain</p>
+                                        <div class="h-16"></div>
+                                        <p id="eval-print-sign-name" class="font-bold border-t border-slate-400 pt-1">________________________</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -1597,6 +1796,84 @@
             `;
         };
 
+        const getNowTimestampISO = () => {
+            const d = new Date();
+            const pad = (n) => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+        };
+
+        const extractHHMM = (ts) => {
+            if (!ts) return '';
+            const str = String(ts).trim();
+            const m = str.match(/(?:T|\s|^)(\d{1,2}):(\d{2})/);
+            return m ? `${m[1].padStart(2, '0')}:${m[2]}` : '';
+        };
+
+        const formatTimestampShortID = (ts) => {
+            if (!ts) return '-';
+            const str = String(ts).trim();
+            if (!str) return '-';
+            const m = str.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
+            if (m) {
+                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+                return `${m[3]} ${months[Number(m[2]) - 1]} ${m[1].slice(-2)} ${m[4]}:${m[5]}`;
+            }
+            return formatShortDeadlineID(str);
+        };
+
+        const parseTimestampMs = (ts) => {
+            if (!ts) return null;
+            const str = String(ts).trim().replace(' ', 'T');
+            const m = str.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/);
+            if (m) {
+                return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), Number(m[4]), Number(m[5]), Number(m[6] || 0)).getTime();
+            }
+            const parsed = Date.parse(str);
+            return isNaN(parsed) ? null : parsed;
+        };
+
+        const formatMinutesID = (totalMinutes) => {
+            if (totalMinutes == null || isNaN(totalMinutes) || totalMinutes < 0) return '-';
+            const mins = Math.round(totalMinutes);
+            if (mins < 60) return `${mins} mnt`;
+            const hours = Math.floor(mins / 60);
+            const remMins = mins % 60;
+            if (hours < 24) return remMins > 0 ? `${hours} jam ${remMins} mnt` : `${hours} jam`;
+            const days = Math.floor(hours / 24);
+            const remHours = hours % 24;
+            return remHours > 0 ? `${days} hr ${remHours} jam` : `${days} hr`;
+        };
+
+        const computeJobDurationInfo = (order) => {
+            const startMs = parseTimestampMs(order.startedAt);
+            const endMs = parseTimestampMs(order.completedAt);
+            if (order.status === 'Selesai') {
+                if (startMs && endMs && endMs >= startMs) {
+                    const mins = (endMs - startMs) / 60000;
+                    return { minutes: mins, label: formatMinutesID(mins), isMeasured: true };
+                }
+                return { minutes: null, label: 'Data Impor (tanpa jam)', isMeasured: false };
+            }
+            if (order.status === 'Cancel') {
+                if (startMs && endMs && endMs >= startMs) {
+                    return { minutes: null, label: 'Dibatalkan', isMeasured: false };
+                }
+                return { minutes: null, label: 'Dibatalkan', isMeasured: false };
+            }
+            // Ongoing: Antrean / Pending / Revisi
+            if (startMs) {
+                const mins = Math.max(0, (Date.now() - startMs) / 60000);
+                return { minutes: mins, label: `Berjalan: ${formatMinutesID(mins)}`, isMeasured: false };
+            }
+            if (order.dateISO && /^\d{4}-\d{2}-\d{2}$/.test(order.dateISO)) {
+                const p = order.dateISO.split('-');
+                const approxStart = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]), 9, 0, 0).getTime();
+                const mins = Math.max(0, (Date.now() - approxStart) / 60000);
+                return { minutes: mins, label: `± ${formatMinutesID(mins)}`, isMeasured: false };
+            }
+            return { minutes: null, label: '-', isMeasured: false };
+        };
+
         const todayStr = formatDateISO(todayObj);
         const tomorrowObj = new Date(todayObj);
         tomorrowObj.setDate(todayObj.getDate() + 1);
@@ -1617,7 +1894,8 @@
                 canCreateOrder: true,
                 canEditDesignProgress: true,
                 canAccOrder: true,
-                canManageUsers: true
+                canManageUsers: true,
+                canViewDesignerEval: true
             },
             WEB_ADMIN: {
                 label: 'Web Admin',
@@ -1686,7 +1964,7 @@
             },
             KEPALA_DESAIN: {
                 label: 'Kepala Divisi Desain',
-                summary: 'Edit Job Tracker (Buat order, ajukan revisi, centang ACC), booking meeting, booking studio foto',
+                summary: 'Edit Job Tracker (Buat order, ajukan revisi, centang ACC), evaluasi staff desain, booking meeting & studio foto',
                 canCreateAnnouncement: false,
                 canCreateJob: false,
                 canBookStudio: true,
@@ -1695,7 +1973,8 @@
                 canCreateOrder: true,
                 canEditDesignProgress: false,
                 canAccOrder: true,
-                canManageUsers: false
+                canManageUsers: false,
+                canViewDesignerEval: true
             },
             KEPALA_KONTEN: {
                 label: 'Kepala Divisi Konten',
@@ -1882,6 +2161,7 @@
                     document.getElementById('login-screen').classList.add('hidden');
                 }
                 populateDesignYearFilter();
+                populateDesignerEvalFilters(true);
                 populateWebmasterHistoryYears(true);
                 applyRolePermissions();
                 renderAll();
@@ -2057,7 +2337,9 @@
                 accAdmin: false,
                 isUrgent: true,
                 revisionCount: 0,
-                revisionLogs: []
+                revisionLogs: [],
+                startedAt: `${todayStr}T09:15:00`,
+                completedAt: ''
             },
             {
                 id: 'ORD-043',
@@ -2080,7 +2362,9 @@
                 revisionCount: 1,
                 revisionLogs: [
                     { round: 1, by: 'Nadia (Admin MP)', time: 'Hari ini, 10:15', note: 'Tolong perbesar tulisan Kevlar Pro dan tambahkan ikon waterproof di pojok kanan bawah.' }
-                ]
+                ],
+                startedAt: `${todayStr}T08:30:00`,
+                completedAt: ''
             },
             {
                 id: 'ORD-041',
@@ -2101,7 +2385,9 @@
                 accAdmin: true,
                 isUrgent: false,
                 revisionCount: 0,
-                revisionLogs: []
+                revisionLogs: [],
+                startedAt: '2026-10-18T09:00:00',
+                completedAt: '2026-10-18T11:45:00'
             }
         ];
 
@@ -2164,6 +2450,7 @@
             document.getElementById('meeting-date').value = todayStr;
 
             populateDesignYearFilter();
+            populateDesignerEvalFilters(true);
             populateWebmasterHistoryYears();
             applyRolePermissions();
             renderAll();
@@ -2179,6 +2466,7 @@
             renderAnnouncements();
             renderJobVacancies();
             renderDesignTable();
+            renderDesignerEvaluation();
             renderStudioTable();
             renderMeetingTable();
             renderProductGrid();
@@ -2263,6 +2551,8 @@
             document.getElementById('btn-booking-meeting').classList.toggle('hidden', !perms.canBookMeeting);
             document.getElementById('btn-new-product').classList.toggle('hidden', !perms.canCreatePK);
             document.getElementById('design-order-form-card').classList.toggle('hidden', !perms.canCreateOrder);
+            const evalSection = document.getElementById('designer-eval-section');
+            if (evalSection) evalSection.classList.toggle('hidden', !perms.canViewDesignerEval);
 
             // Mode khusus Guest pada Dashboard Utama
             const quickCards = document.getElementById('dashboard-quick-cards');
@@ -2479,6 +2769,8 @@
             } else if (moduleType === 'design') {
                 designOrders = designOrders.filter(o => String(o.id) !== String(id));
                 renderDesignTable();
+                populateDesignerEvalFilters(false);
+                renderDesignerEvaluation();
             } else if (moduleType === 'studio') {
                 studioBookings = studioBookings.filter(s => String(s.id) !== String(id));
                 renderStudioTable();
@@ -2806,6 +3098,11 @@
 
                 const canDel = canDeleteRecord(order.creatorEmail);
                 const picOptions = getDesignerOptionsForOrder(order.pic);
+                const createdTimeHHMM = extractHHMM(order.startedAt);
+                const completedTimeHHMM = extractHHMM(order.completedAt);
+                const completedTimeHtml = (order.status === 'Selesai' && completedTimeHHMM)
+                    ? `<div title="Selesai pada: ${escHtml(formatTimestampShortID(order.completedAt))}" class="mt-1 inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md"><i class="fa-regular fa-clock"></i> ${escHtml(completedTimeHHMM)}</div>`
+                    : '';
 
                 return `
                     <tr class="${rowHighlightClass} transition-colors align-top">
@@ -2814,7 +3111,7 @@
                                 <span class="font-bold text-slate-900 text-xs">${safeId}</span>
                                 ${urgentBadgeHtml}
                             </div>
-                            <span class="block text-[11px] text-slate-500 mb-1.5">${escHtml(order.date)}</span>
+                            <span class="block text-[11px] text-slate-500 mb-1.5">${escHtml(order.date)}${createdTimeHHMM ? ` <span class="font-semibold text-slate-700">&bull; ${escHtml(createdTimeHHMM)}</span>` : ''}</span>
                             <div class="p-2 rounded-lg bg-slate-100/80 border border-slate-200/70">
                                 <p class="text-[11px] font-bold text-slate-800 leading-tight"><i class="fa-solid fa-user-pen text-brand-600 mr-1"></i>${escHtml(order.creatorName || '-')}</p>
                                 ${order.creatorEmail ? `<p class="text-[10px] text-slate-500 truncate max-w-[155px]">${escHtml(order.creatorEmail)}</p>` : ''}
@@ -2852,6 +3149,7 @@
                                 <option value="Selesai" ${order.status === 'Selesai' ? 'selected' : ''}>Selesai</option>
                                 <option value="Cancel" ${order.status === 'Cancel' ? 'selected' : ''}>Cancel</option>
                             </select>
+                            ${completedTimeHtml}
                             <div class="flex flex-wrap items-center">
                                 ${revBadgeHtml}
                                 ${requestRevBtn}
@@ -2917,7 +3215,9 @@
                 accAdmin: false,
                 isUrgent,
                 revisionCount: 0,
-                revisionLogs: []
+                revisionLogs: [],
+                startedAt: getNowTimestampISO(),
+                completedAt: ''
             };
             designOrders.unshift(newOrder);
 
@@ -2926,6 +3226,7 @@
                     if (res && res.success && res.id) {
                         newOrder.id = res.id;
                         renderDesignTable();
+                        renderDesignerEvaluation();
                         renderWebmasterHistory();
                     }
                 });
@@ -2934,8 +3235,10 @@
             e.target.reset();
             document.getElementById('order-deadline').value = tomorrowStr;
             populateDesignYearFilter();
+            populateDesignerEvalFilters(false);
             populateWebmasterHistoryYears();
             renderDesignTable();
+            renderDesignerEvaluation();
             renderWebmasterHistory();
             updateDashboardStats();
 
@@ -2987,6 +3290,7 @@
             order.revisionCount = (order.revisionCount || 0) + 1;
             order.status = 'Revisi';
             order.accAdmin = false;
+            order.completedAt = '';
             if (!order.revisionLogs) order.revisionLogs = [];
             order.revisionLogs.unshift({
                 round: order.revisionCount,
@@ -2999,6 +3303,7 @@
                 runGas('updateDesignOrderFields', [orderId, {
                     Status: 'Revisi',
                     ACC_Admin: false,
+                    Waktu_Selesai: '',
                     Jumlah_Revisi: order.revisionCount,
                     Log_Revisi_JSON: JSON.stringify(order.revisionLogs)
                 }]);
@@ -3006,6 +3311,7 @@
 
             toggleModal('modal-revision');
             renderDesignTable();
+            renderDesignerEvaluation();
             updateDashboardStats();
             triggerDesignerDeviceAlert(`🔄 Revisi Desain #${order.revisionCount} (${order.id})`, `${order.produk}: ${note}`, order.isUrgent);
             showToast(`Revisi #${order.revisionCount} tersimpan & notifikasi dikirim ke tim desain!`, 'info');
@@ -3034,6 +3340,8 @@
                     runGas('updateDesignOrderFields', [orderId, { PIC: newPic }]);
                 }
                 renderDesignTable();
+                populateDesignerEvalFilters(false);
+                renderDesignerEvaluation();
                 showToast(`PIC Desainer ${orderId} diubah ke ${newPic}`, 'info');
             }
         }
@@ -3044,14 +3352,24 @@
             if (order) {
                 order.status = newStatus;
                 const updates = { Status: newStatus };
-                if (newStatus !== 'Selesai') {
+                if (!order.startedAt) {
+                    order.startedAt = getNowTimestampISO();
+                    updates.Waktu_Mulai = order.startedAt;
+                }
+                if (newStatus === 'Selesai') {
+                    order.completedAt = getNowTimestampISO();
+                    updates.Waktu_Selesai = order.completedAt;
+                } else {
                     order.accAdmin = false;
+                    order.completedAt = '';
                     updates.ACC_Admin = false;
+                    updates.Waktu_Selesai = '';
                 }
                 if (IS_GAS_ENV) {
                     runGas('updateDesignOrderFields', [orderId, updates]);
                 }
                 renderDesignTable();
+                renderDesignerEvaluation();
                 updateDashboardStats();
                 showToast(`Status ${orderId} diperbarui menjadi ${newStatus}`, 'info');
             }
@@ -3082,6 +3400,266 @@
             }
             renderDesignTable();
             showToast(order.resultLink ? `Link hasil desain berhasil dilampirkan pada ${orderId}!` : `Link hasil desain pada ${orderId} dikosongkan.`, 'success');
+        }
+
+        // --- 10B. EVALUASI KINERJA STAFF DESAIN (KEPALA DIVISI DESAIN & WEBMASTER) ---
+        let evalFilterInitialized = false;
+
+        function populateDesignerEvalFilters(resetToLatest = false) {
+            const yearSel = document.getElementById('eval-filter-year');
+            const monthSel = document.getElementById('eval-filter-month');
+            const staffSel = document.getElementById('eval-filter-staff');
+            if (!yearSel || !monthSel || !staffSel) return;
+
+            const prevYear = yearSel.value || 'ALL';
+            const prevStaff = staffSel.value || 'ALL';
+
+            const yearsSet = new Set([currentYearStr, '2025', '2024']);
+            const yearMonths = [];
+            const staffSet = new Set();
+
+            designOrders.forEach(o => {
+                if (o.dateISO && /^\d{4}-\d{2}/.test(o.dateISO)) {
+                    yearsSet.add(o.dateISO.substring(0, 4));
+                    yearMonths.push(o.dateISO.substring(0, 7));
+                }
+                const picName = (o.pic || 'Belum Ditugaskan').trim();
+                if (picName) staffSet.add(picName);
+            });
+            registeredUsers.forEach(u => {
+                if (u.role === 'DESIGNER' && u.name) staffSet.add(u.name.trim());
+            });
+
+            const sortedYears = Array.from(yearsSet).sort((a, b) => b.localeCompare(a));
+            yearSel.innerHTML = '<option value="ALL">Semua Tahun</option>' +
+                sortedYears.map(y => `<option value="${y}">${y}</option>`).join('');
+
+            const sortedStaff = Array.from(staffSet).sort((a, b) => a.localeCompare(b));
+            staffSel.innerHTML = '<option value="ALL">Semua Staff Desain</option>' +
+                sortedStaff.map(s => `<option value="${escHtml(s)}">${escHtml(s)}</option>`).join('');
+
+            if (!evalFilterInitialized || resetToLatest) {
+                let latestYear = currentYearStr;
+                let latestMonth = currentMonthStr;
+                if (yearMonths.length > 0) {
+                    yearMonths.sort((a, b) => b.localeCompare(a));
+                    latestYear = yearMonths[0].substring(0, 4);
+                    latestMonth = yearMonths[0].substring(5, 7);
+                }
+                yearSel.value = latestYear;
+                monthSel.value = latestMonth;
+                staffSel.value = 'ALL';
+                evalFilterInitialized = true;
+            } else {
+                yearSel.value = prevYear;
+                staffSel.value = sortedStaff.includes(prevStaff) ? prevStaff : 'ALL';
+            }
+        }
+
+        function renderDesignerEvaluation() {
+            const section = document.getElementById('designer-eval-section');
+            if (!section) return;
+            const perms = ROLE_PERMISSIONS[currentUser.role] || ROLE_PERMISSIONS.GUEST;
+            if (!perms.canViewDesignerEval) return;
+
+            const yearVal = document.getElementById('eval-filter-year').value;
+            const monthVal = document.getElementById('eval-filter-month').value;
+            const staffVal = document.getElementById('eval-filter-staff').value;
+
+            const monthNames = {
+                '01': 'Januari', '02': 'Februari', '03': 'Maret', '04': 'April',
+                '05': 'Mei', '06': 'Juni', '07': 'Juli', '08': 'Agustus',
+                '09': 'September', '10': 'Oktober', '11': 'November', '12': 'Desember'
+            };
+            let periodLabel = 'Semua Periode (Ongoing)';
+            if (yearVal !== 'ALL' && monthVal !== 'ALL') periodLabel = `${monthNames[monthVal]} ${yearVal}`;
+            else if (yearVal !== 'ALL') periodLabel = `Tahun ${yearVal} (Ongoing)`;
+            else if (monthVal !== 'ALL') periodLabel = `Bulan ${monthNames[monthVal]}`;
+
+            const filtered = designOrders.filter(o => {
+                const oYear = o.dateISO ? o.dateISO.substring(0, 4) : '';
+                const oMonth = o.dateISO ? o.dateISO.substring(5, 7) : '';
+                const picName = (o.pic || 'Belum Ditugaskan').trim();
+                const matchYear = yearVal === 'ALL' || oYear === yearVal;
+                const matchMonth = monthVal === 'ALL' || oMonth === monthVal;
+                const matchStaff = staffVal === 'ALL' || picName === staffVal;
+                return matchYear && matchMonth && matchStaff;
+            });
+
+            // 1. Hitung KPI Utama
+            const totalCount = filtered.length;
+            const doneOrders = filtered.filter(o => o.status === 'Selesai');
+            const unfinishedOrders = filtered.filter(o => o.status !== 'Selesai');
+            const completionPct = totalCount > 0 ? Math.round((doneOrders.length / totalCount) * 100) : 0;
+
+            const measuredDurations = [];
+            filtered.forEach(o => {
+                const info = computeJobDurationInfo(o);
+                if (info.isMeasured && info.minutes != null) measuredDurations.push(info.minutes);
+            });
+            const overallAvg = measuredDurations.length > 0
+                ? formatMinutesID(measuredDurations.reduce((a, b) => a + b, 0) / measuredDurations.length)
+                : '-';
+
+            document.getElementById('eval-kpi-total').textContent = totalCount;
+            document.getElementById('eval-kpi-period-note').textContent = periodLabel;
+            document.getElementById('eval-kpi-done').textContent = doneOrders.length;
+            document.getElementById('eval-kpi-rate').textContent = `${completionPct}% tingkat selesai`;
+            document.getElementById('eval-kpi-avg-time').textContent = overallAvg;
+            document.getElementById('eval-kpi-open').textContent = unfinishedOrders.length;
+            document.getElementById('eval-unfinished-count-badge').textContent = `${unfinishedOrders.length} Job`;
+
+            // 2. Rekapitulasi per Staff Desain
+            const staffMap = {};
+            filtered.forEach(o => {
+                const pic = (o.pic || 'Belum Ditugaskan').trim();
+                if (!staffMap[pic]) {
+                    staffMap[pic] = { pic, total: 0, selesai: 0, antrean: 0, pending: 0, revisi: 0, cancel: 0, durations: [] };
+                }
+                const rec = staffMap[pic];
+                rec.total++;
+                if (o.status === 'Selesai') rec.selesai++;
+                else if (o.status === 'Pending') rec.pending++;
+                else if (o.status === 'Revisi') rec.revisi++;
+                else if (o.status === 'Cancel') rec.cancel++;
+                else rec.antrean++;
+
+                const dInfo = computeJobDurationInfo(o);
+                if (dInfo.isMeasured && dInfo.minutes != null) rec.durations.push(dInfo.minutes);
+            });
+
+            const staffRows = Object.values(staffMap).sort((a, b) => b.total - a.total);
+            const recapTbody = document.getElementById('eval-staff-recap-tbody');
+            if (staffRows.length === 0) {
+                recapTbody.innerHTML = '<tr><td colspan="9" class="py-8 text-center text-slate-400">Belum ada data job pada periode ini.</td></tr>';
+            } else {
+                recapTbody.innerHTML = staffRows.map(r => {
+                    const pct = r.total > 0 ? Math.round((r.selesai / r.total) * 100) : 0;
+                    const avgStr = r.durations.length > 0
+                        ? `${formatMinutesID(r.durations.reduce((a, b) => a + b, 0) / r.durations.length)} (${r.durations.length} job)`
+                        : 'Belum ada jam selesai';
+                    return `
+                        <tr class="hover:bg-slate-50/80">
+                            <td class="py-3 px-3.5 font-bold text-slate-900">${escHtml(r.pic)}</td>
+                            <td class="py-3 px-3 text-center font-extrabold text-slate-900">${r.total}</td>
+                            <td class="py-3 px-3 text-center font-bold text-emerald-700 bg-emerald-50/40">${r.selesai}</td>
+                            <td class="py-3 px-3 text-center font-semibold text-slate-600">${r.antrean}</td>
+                            <td class="py-3 px-3 text-center font-bold text-amber-700 bg-amber-50/40">${r.pending}</td>
+                            <td class="py-3 px-3 text-center font-bold text-purple-700 bg-purple-50/40">${r.revisi}</td>
+                            <td class="py-3 px-3 text-center font-bold text-rose-700 bg-rose-50/40">${r.cancel}</td>
+                            <td class="py-3 px-3 text-center">
+                                <span class="inline-block px-2 py-0.5 rounded-md font-bold ${pct >= 80 ? 'bg-emerald-100 text-emerald-800' : (pct >= 50 ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800')}">${pct}%</span>
+                            </td>
+                            <td class="py-3 px-3.5 font-semibold text-indigo-700">${escHtml(avgStr)}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            // 3. Tabel Rincian Waktu Pengerjaan Setiap Job
+            const durTbody = document.getElementById('eval-duration-tbody');
+            if (filtered.length === 0) {
+                durTbody.innerHTML = '<tr><td colspan="7" class="py-8 text-center text-slate-400">Tidak ada job pada periode ini.</td></tr>';
+            } else {
+                durTbody.innerHTML = filtered.map(o => {
+                    const dInfo = computeJobDurationInfo(o);
+                    const startDisplay = o.startedAt ? formatTimestampShortID(o.startedAt) : (o.date || '-');
+                    const endDisplay = o.completedAt ? formatTimestampShortID(o.completedAt) : (o.status === 'Selesai' ? 'Tercatat Selesai' : '-');
+                    let stCls = 'bg-slate-100 text-slate-700';
+                    if (o.status === 'Selesai') stCls = 'bg-emerald-100 text-emerald-800';
+                    else if (o.status === 'Pending') stCls = 'bg-amber-100 text-amber-800';
+                    else if (o.status === 'Revisi') stCls = 'bg-purple-100 text-purple-800';
+                    else if (o.status === 'Cancel') stCls = 'bg-rose-100 text-rose-800';
+                    return `
+                        <tr class="hover:bg-slate-50/80 align-top">
+                            <td class="py-2.5 px-3.5 whitespace-nowrap">
+                                <span class="font-bold text-slate-900 block">${escHtml(o.id)}</span>
+                                <span class="text-[11px] text-slate-500">${escHtml(o.date)}</span>
+                            </td>
+                            <td class="py-2.5 px-3.5 max-w-xs">
+                                <p class="font-semibold text-slate-900 whitespace-pre-line">${escHtml(o.produk)}</p>
+                                <p class="text-[11px] text-slate-500 mt-0.5">${escHtml((o.stores || []).join(', '))}</p>
+                            </td>
+                            <td class="py-2.5 px-3 whitespace-nowrap font-semibold text-slate-700">${escHtml(o.pic || 'Belum Ditugaskan')}</td>
+                            <td class="py-2.5 px-3 whitespace-nowrap text-slate-600">${escHtml(startDisplay)}</td>
+                            <td class="py-2.5 px-3 whitespace-nowrap text-slate-600">${escHtml(endDisplay)}</td>
+                            <td class="py-2.5 px-3 whitespace-nowrap font-bold ${dInfo.isMeasured ? 'text-indigo-700' : 'text-slate-500'}">${escHtml(dInfo.label)}</td>
+                            <td class="py-2.5 px-3 text-center whitespace-nowrap">
+                                <span class="inline-block px-2 py-0.5 rounded-md font-bold text-[11px] ${stCls}">${escHtml(o.status)}</span>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            // 4. Tabel Khusus Job Tidak Selesai, Pending, Revisi, atau Cancel
+            const unfTbody = document.getElementById('eval-unfinished-tbody');
+            if (unfinishedOrders.length === 0) {
+                unfTbody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-emerald-600 font-semibold"><i class="fa-solid fa-circle-check mr-1"></i>Semua job pada periode ini berstatus Selesai!</td></tr>';
+            } else {
+                unfTbody.innerHTML = unfinishedOrders.map(o => {
+                    const dInfo = computeJobDurationInfo(o);
+                    let stCls = 'bg-slate-100 text-slate-700';
+                    if (o.status === 'Pending') stCls = 'bg-amber-100 text-amber-800';
+                    else if (o.status === 'Revisi') stCls = 'bg-purple-100 text-purple-800';
+                    else if (o.status === 'Cancel') stCls = 'bg-rose-100 text-rose-800';
+                    return `
+                        <tr class="hover:bg-rose-50/40 align-top">
+                            <td class="py-2.5 px-3.5 whitespace-nowrap">
+                                <span class="font-bold text-slate-900 block">${escHtml(o.id)}</span>
+                                <span class="text-[11px] text-slate-500">${escHtml(o.date)}</span>
+                            </td>
+                            <td class="py-2.5 px-3.5 max-w-sm">
+                                <p class="font-bold text-slate-900 whitespace-pre-line">${escHtml(o.produk)}</p>
+                                ${o.keterangan ? `<p class="text-[11px] text-slate-600 mt-0.5 whitespace-pre-line">${escHtml(o.keterangan)}</p>` : ''}
+                            </td>
+                            <td class="py-2.5 px-3 whitespace-nowrap font-semibold text-slate-700">${escHtml(o.pic || 'Belum Ditugaskan')}</td>
+                            <td class="py-2.5 px-3 whitespace-nowrap font-semibold text-slate-700">${escHtml(formatShortDeadlineID(o.deadline))}</td>
+                            <td class="py-2.5 px-3 whitespace-nowrap font-bold text-rose-700">${escHtml(dInfo.label)}</td>
+                            <td class="py-2.5 px-3 text-center whitespace-nowrap">
+                                <span class="inline-block px-2 py-0.5 rounded-md font-bold text-[11px] ${stCls}">${escHtml(o.status)}</span>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        }
+
+        function printDesignerEvalReport() {
+            const perms = ROLE_PERMISSIONS[currentUser.role] || ROLE_PERMISSIONS.GUEST;
+            if (!perms.canViewDesignerEval) {
+                showToast('Khusus Kepala Divisi Desain / Webmaster untuk mencetak laporan evaluasi.', 'error');
+                return;
+            }
+
+            const yearVal = document.getElementById('eval-filter-year').value;
+            const monthSel = document.getElementById('eval-filter-month');
+            const monthVal = monthSel.value;
+            const staffSel = document.getElementById('eval-filter-staff');
+
+            let periodLabel = 'Semua Periode (Ongoing)';
+            if (yearVal !== 'ALL' && monthVal !== 'ALL') periodLabel = `${monthSel.options[monthSel.selectedIndex].text} ${yearVal}`;
+            else if (yearVal !== 'ALL') periodLabel = `Tahun ${yearVal} (Ongoing)`;
+            else if (monthVal !== 'ALL') periodLabel = `Bulan ${monthSel.options[monthSel.selectedIndex].text}`;
+
+            const nowStr = new Date().toLocaleString('id-ID', {
+                day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+            });
+
+            document.getElementById('eval-print-by').textContent = `${currentUser.name} (${currentUser.email})`;
+            document.getElementById('eval-print-time').textContent = `${nowStr} WIB`;
+            document.getElementById('eval-print-period').textContent = periodLabel;
+            document.getElementById('eval-print-staff').textContent = staffSel.options[staffSel.selectedIndex].text;
+            document.getElementById('eval-print-sign-name').textContent = currentUser.name;
+
+            document.body.classList.add('printing-designer-eval');
+            const cleanup = () => {
+                document.body.classList.remove('printing-designer-eval');
+                window.removeEventListener('afterprint', cleanup);
+            };
+            window.addEventListener('afterprint', cleanup);
+            window.print();
+            setTimeout(cleanup, 1200);
         }
 
         // --- 11. MODUL JADWAL STUDIO FOTO ---
