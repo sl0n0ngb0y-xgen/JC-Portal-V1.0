@@ -917,6 +917,8 @@
                                     <option value="HRD">HRD</option>
                                     <option value="KEPALA_DM">Kepala Digital Marketing</option>
                                     <option value="KEPALA_BRANDING">Kepala Tim Branding</option>
+                                    <option value="KEPALA_DESAIN">Kepala Divisi Desain</option>
+                                    <option value="KEPALA_KONTEN">Kepala Divisi Konten</option>
                                     <option value="DESIGNER">Staff Desain</option>
                                     <option value="ADMIN_MP">Admin Marketplace</option>
                                     <option value="GUEST">Guest (Tamu / Read-Only)</option>
@@ -1680,6 +1682,32 @@
                 canCreateOrder: false,
                 canEditDesignProgress: false,
                 canAccOrder: false,
+                canManageUsers: false
+            },
+            KEPALA_DESAIN: {
+                label: 'Kepala Divisi Desain',
+                summary: 'Edit Job Tracker (Buat order, ajukan revisi, centang ACC), booking meeting, booking studio foto',
+                canCreateAnnouncement: false,
+                canCreateJob: false,
+                canBookStudio: true,
+                canBookMeeting: true,
+                canCreatePK: false,
+                canCreateOrder: true,
+                canEditDesignProgress: false,
+                canAccOrder: true,
+                canManageUsers: false
+            },
+            KEPALA_KONTEN: {
+                label: 'Kepala Divisi Konten',
+                summary: 'Edit Job Tracker (Buat order, ajukan revisi, centang ACC), booking meeting, booking studio foto',
+                canCreateAnnouncement: false,
+                canCreateJob: false,
+                canBookStudio: true,
+                canBookMeeting: true,
+                canCreatePK: false,
+                canCreateOrder: true,
+                canEditDesignProgress: false,
+                canAccOrder: true,
                 canManageUsers: false
             },
             DESIGNER: {

@@ -314,8 +314,8 @@ function getInitialPortalData(actingEmail) {
 function saveNewDesignOrderToSheet(orderObj, actingEmail) {
   const ss = getPortalSpreadsheet_();
   const user = getCurrentUserContext_(ss, actingEmail || (orderObj && orderObj.creatorEmail));
-  if (!['WEBMASTER', 'WEB_ADMIN', 'ADMIN_MP'].includes(user.role)) {
-    return { success: false, message: 'Akses ditolak: Hanya Admin Marketplace / Web Admin / Webmaster yang dapat membuat order.' };
+  if (!['WEBMASTER', 'WEB_ADMIN', 'ADMIN_MP', 'KEPALA_DESAIN', 'KEPALA_KONTEN'].includes(user.role)) {
+    return { success: false, message: 'Akses ditolak: Anda tidak memiliki izin membuat order Job Tracker.' };
   }
 
   const sheet = ss.getSheetByName(SHEET_NAMES.DESIGN_ORDERS);
@@ -360,7 +360,7 @@ function updateDesignOrderField(orderId, fieldName, newValue, actingEmail) {
 function updateDesignOrderFields(orderId, updatesObj, actingEmail) {
   const ss = getPortalSpreadsheet_();
   const user = getCurrentUserContext_(ss, actingEmail);
-  if (!['WEBMASTER', 'WEB_ADMIN', 'DESIGNER', 'ADMIN_MP'].includes(user.role)) {
+  if (!['WEBMASTER', 'WEB_ADMIN', 'DESIGNER', 'ADMIN_MP', 'KEPALA_DESAIN', 'KEPALA_KONTEN'].includes(user.role)) {
     return { success: false, message: 'Akses ditolak untuk mengubah Job Tracker.' };
   }
 
@@ -388,7 +388,7 @@ function updateDesignOrderFields(orderId, updatesObj, actingEmail) {
 function saveStudioBookingToSheet(bookingObj, actingEmail) {
   const ss = getPortalSpreadsheet_();
   const user = getCurrentUserContext_(ss, actingEmail || (bookingObj && bookingObj.creatorEmail));
-  if (!['WEBMASTER', 'WEB_ADMIN', 'KEPALA_BRANDING', 'DESIGNER'].includes(user.role)) {
+  if (!['WEBMASTER', 'WEB_ADMIN', 'KEPALA_BRANDING', 'KEPALA_DESAIN', 'KEPALA_KONTEN', 'DESIGNER'].includes(user.role)) {
     return { success: false, message: 'Akses ditolak untuk booking studio foto.' };
   }
 
@@ -425,7 +425,7 @@ function saveStudioBookingToSheet(bookingObj, actingEmail) {
 function saveMeetingBookingToSheet(bookingObj, actingEmail) {
   const ss = getPortalSpreadsheet_();
   const user = getCurrentUserContext_(ss, actingEmail || (bookingObj && bookingObj.creatorEmail));
-  if (!['WEBMASTER', 'WEB_ADMIN', 'KEPALA_MP', 'HRD', 'KEPALA_DM', 'KEPALA_BRANDING'].includes(user.role)) {
+  if (!['WEBMASTER', 'WEB_ADMIN', 'KEPALA_MP', 'HRD', 'KEPALA_DM', 'KEPALA_BRANDING', 'KEPALA_DESAIN', 'KEPALA_KONTEN'].includes(user.role)) {
     return { success: false, message: 'Akses ditolak untuk booking ruang meeting.' };
   }
 
