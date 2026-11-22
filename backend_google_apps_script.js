@@ -19,6 +19,10 @@ const DESIGN_TEAM_WEBHOOK_URL = '';
 // Daftar 7 toko resmi JC PORTAL V.2.0
 const OFFICIAL_STORES = ['Godwin', 'Sidji', 'Gudang Trail', 'JSH', 'JC', 'JSH Speedshop', 'Maxiclub'];
 
+// Konfigurasi autentikasi password user (non-Guest)
+const DEFAULT_USER_PASSWORD = '12345678';
+const PASSWORD_SALT = 'JC_PORTAL_V2_SALT_2026';
+
 const SHEET_NAMES = {
   USERS: 'Users_Role',
   DESIGN_ORDERS: 'Order_Desain',
@@ -104,7 +108,7 @@ function setupDatabaseSheets() {
   const ss = getPortalSpreadsheet_();
 
   const schemas = {
-    [SHEET_NAMES.USERS]: ['Email', 'Nama', 'Role', 'No_WhatsApp'],
+    [SHEET_NAMES.USERS]: ['Email', 'Nama', 'Role', 'No_WhatsApp', 'Password_Hash', 'Default_Password'],
     [SHEET_NAMES.DESIGN_ORDERS]: [
       'ID', 'Tanggal_ISO', 'Tanggal_Tampil', 'Pembuat_Nama', 'Pembuat_Email', 'Pembuat_WA',
       'Produk', 'Jenis', 'Stores_CSV', 'Deadline', 'Link_Bahan', 'Link_Hasil',
@@ -178,14 +182,27 @@ function getInitialPortalData(actingEmail) {
   const ss = getPortalSpreadsheet_();
   const userProfile = getCurrentUserContext_(ss, actingEmail);
 
-  // Users directory
-  const usersRaw = getSheetDataAsObjects(ss.getSheetByName(SHEET_NAMES.USERS));
-  const registeredUsers = usersRaw.map(u => ({
-    email: String(u.Email || '').trim(),
-    name: String(u.Nama || '').trim(),
-    role: String(u.Role || 'GUEST').trim().toUpperCase(),
-    wa: String(u.No_WhatsApp || '').trim()
-  })).filter(u => u.email);
+  // Users directory (TIDAK mengirim Password_Hash ke client)
+  const userSheet = ss.getSheetByName(SHEET_NAMES.USERS);
+  ensureUserPasswordColumns_(userSheet);
+  const defaultHash = hashPassword_(DEFAULT_USER_PASSWORD);
+  const usersRaw = getSheetDataAsObjects(userSheet);
+  const registeredUsers = usersRaw.map(u => {
+    const roleUpper = String(u.Role || 'GUEST').trim().toUpperCase();
+    const storedHash = String(u.Password_Hash || '').trim();
+    const isDefaultPw = roleUpper !== 'GUEST' && (
+      !storedHash ||
+      storedHash === defaultHash ||
+      String(u.Default_Password).toUpperCase() === 'TRUE'
+    );
+    return {
+      email: String(u.Email || '').trim(),
+      name: String(u.Nama || '').trim(),
+      role: roleUpper,
+      wa: String(u.No_WhatsApp || '').trim(),
+      isDefaultPassword: isDefaultPw
+    };
+  }).filter(u => u.email);
 
   // 1. Job Tracker V.2.0 (Order_Desain)
   const ordersRaw = getSheetDataAsObjects(ss.getSheetByName(SHEET_NAMES.DESIGN_ORDERS));
@@ -604,14 +621,185 @@ function addUserByWebmaster(userObj, actingEmail) {
   if (user.role !== 'WEBMASTER') return { success: false, message: 'Khusus Webmaster.' };
 
   const sheet = ss.getSheetByName(SHEET_NAMES.USERS);
+  ensureUserPasswordColumns_(sheet);
   const existing = getSheetDataAsObjects(sheet);
   const emailLower = String(userObj.email || '').trim().toLowerCase();
   if (existing.some(u => String(u.Email || '').trim().toLowerCase() === emailLower)) {
     return { success: false, message: 'Email sudah terdaftar.' };
   }
 
-  sheet.appendRow([emailLower, userObj.name, userObj.role, userObj.wa || '']);
+  const roleUpper = String(userObj.role || 'GUEST').trim().toUpperCase();
+  const isGuest = roleUpper === 'GUEST';
+  const pwHash = isGuest ? '' : hashPassword_(DEFAULT_USER_PASSWORD);
+  sheet.appendRow([emailLower, userObj.name, roleUpper, userObj.wa || '', pwHash, !isGuest]);
   return { success: true };
+}
+
+/**
+ * 7B. AUTENTIKASI LOGIN PASSWORD, GANTI PASSWORD & RESET PASSWORD WEBMASTER
+ */
+function hashPassword_(plainText) {
+  const bytes = Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256,
+    PASSWORD_SALT + ':' + String(plainText || ''),
+    Utilities.Charset.UTF_8
+  );
+  return bytes.map(b => (b < 0 ? b + 256 : b).toString(16).padStart(2, '0')).join('');
+}
+
+function isValidNewPassword_(pwd) {
+  return /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z0-9]{8}$/.test(String(pwd || ''));
+}
+
+function ensureUserPasswordColumns_(sheet) {
+  if (!sheet || sheet.getLastRow() < 1) return;
+  const lastCol = Math.max(sheet.getLastColumn(), 1);
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(h => String(h).trim());
+  const needed = ['Password_Hash', 'Default_Password'];
+  let nextCol = lastCol + 1;
+  needed.forEach(colName => {
+    if (headers.indexOf(colName) === -1) {
+      sheet.getRange(1, nextCol).setValue(colName).setFontWeight('bold').setBackground('#eef2ff');
+      nextCol++;
+    }
+  });
+}
+
+function authenticateUser(email, password) {
+  const ss = getPortalSpreadsheet_();
+  const sheet = ss.getSheetByName(SHEET_NAMES.USERS);
+  if (!sheet) return { success: false, message: 'Sheet Users_Role belum tersedia.' };
+  ensureUserPasswordColumns_(sheet);
+
+  const emailLower = String(email || '').trim().toLowerCase();
+  if (!emailLower) return { success: false, message: 'Masukkan email akun yang terdaftar.' };
+
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0].map(h => String(h).trim());
+  const hashColIdx = headers.indexOf('Password_Hash');
+  const defColIdx = headers.indexOf('Default_Password');
+  const defaultHash = hashPassword_(DEFAULT_USER_PASSWORD);
+
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0] || '').trim().toLowerCase() === emailLower) {
+      const name = String(data[i][1] || emailLower).trim();
+      const role = String(data[i][2] || 'GUEST').trim().toUpperCase();
+      const wa = String(data[i][3] || '').trim();
+
+      // Akun GUEST dapat masuk tanpa password
+      if (role === 'GUEST') {
+        return {
+          success: true,
+          user: { email: emailLower, name: name, role: role, wa: wa, isDefaultPassword: false }
+        };
+      }
+
+      const pwdStr = String(password || '');
+      if (!pwdStr) {
+        return { success: false, message: 'Password wajib diisi untuk akun non-Guest.' };
+      }
+
+      const storedHash = hashColIdx !== -1 ? String(data[i][hashColIdx] || '').trim() : '';
+      const inputHash = hashPassword_(pwdStr);
+
+      let matched = false;
+      if (!storedHash) {
+        matched = (pwdStr === DEFAULT_USER_PASSWORD);
+        if (matched && hashColIdx !== -1 && defColIdx !== -1) {
+          sheet.getRange(i + 1, hashColIdx + 1).setValue(defaultHash);
+          sheet.getRange(i + 1, defColIdx + 1).setValue(true);
+        }
+      } else {
+        matched = (inputHash === storedHash);
+      }
+
+      if (!matched) {
+        return { success: false, message: 'Password salah. Periksa kembali password Anda (default awal: 12345678).' };
+      }
+
+      const isDefaultPassword = (!storedHash || storedHash === defaultHash || (defColIdx !== -1 && String(data[i][defColIdx]).toUpperCase() === 'TRUE')) && (inputHash === defaultHash);
+      return {
+        success: true,
+        user: { email: emailLower, name: name, role: role, wa: wa, isDefaultPassword: isDefaultPassword }
+      };
+    }
+  }
+
+  return { success: false, message: 'Email tidak terdaftar di whitelist kantor. Hubungi Webmaster.' };
+}
+
+function changeUserPassword(email, currentPassword, newPassword, actingEmail) {
+  const ss = getPortalSpreadsheet_();
+  const sheet = ss.getSheetByName(SHEET_NAMES.USERS);
+  if (!sheet) return { success: false, message: 'Sheet Users_Role tidak ditemukan.' };
+  ensureUserPasswordColumns_(sheet);
+
+  const targetLower = String(email || '').trim().toLowerCase();
+  const actor = getCurrentUserContext_(ss, actingEmail);
+  if (actor.role !== 'WEBMASTER' && actor.email.toLowerCase() !== targetLower) {
+    return { success: false, message: 'Akses ditolak: Anda hanya dapat mengganti password akun sendiri.' };
+  }
+
+  if (!isValidNewPassword_(newPassword)) {
+    return { success: false, message: 'Password baru harus tepat 8 karakter kombinasi huruf dan angka (tanpa spasi/simbol).' };
+  }
+  if (String(newPassword) === DEFAULT_USER_PASSWORD) {
+    return { success: false, message: 'Password baru tidak boleh sama dengan password default (12345678).' };
+  }
+
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0].map(h => String(h).trim());
+  const hashColIdx = headers.indexOf('Password_Hash');
+  const defColIdx = headers.indexOf('Default_Password');
+
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0] || '').trim().toLowerCase() === targetLower) {
+      const storedHash = hashColIdx !== -1 ? String(data[i][hashColIdx] || '').trim() : '';
+      const curStr = String(currentPassword || '');
+      const curValid = !storedHash
+        ? (curStr === DEFAULT_USER_PASSWORD)
+        : (hashPassword_(curStr) === storedHash);
+
+      if (!curValid) {
+        return { success: false, message: 'Password saat ini tidak sesuai.' };
+      }
+
+      sheet.getRange(i + 1, hashColIdx + 1).setValue(hashPassword_(newPassword));
+      sheet.getRange(i + 1, defColIdx + 1).setValue(false);
+      return { success: true, message: 'Password berhasil diperbarui!' };
+    }
+  }
+
+  return { success: false, message: 'Akun user tidak ditemukan.' };
+}
+
+function resetUserPasswordByWebmaster(targetEmail, actingEmail) {
+  const ss = getPortalSpreadsheet_();
+  const actor = getCurrentUserContext_(ss, actingEmail);
+  if (actor.role !== 'WEBMASTER') {
+    return { success: false, message: 'Khusus Webmaster yang dapat mereset password user.' };
+  }
+
+  const sheet = ss.getSheetByName(SHEET_NAMES.USERS);
+  ensureUserPasswordColumns_(sheet);
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0].map(h => String(h).trim());
+  const hashColIdx = headers.indexOf('Password_Hash');
+  const defColIdx = headers.indexOf('Default_Password');
+  const targetLower = String(targetEmail || '').trim().toLowerCase();
+
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0] || '').trim().toLowerCase() === targetLower) {
+      const role = String(data[i][2] || 'GUEST').trim().toUpperCase();
+      if (role === 'GUEST') {
+        return { success: false, message: 'Akun Guest tidak memerlukan password.' };
+      }
+      sheet.getRange(i + 1, hashColIdx + 1).setValue(hashPassword_(DEFAULT_USER_PASSWORD));
+      sheet.getRange(i + 1, defColIdx + 1).setValue(true);
+      return { success: true, message: 'Password berhasil direset ke default (12345678).' };
+    }
+  }
+  return { success: false, message: 'User tidak ditemukan.' };
 }
 
 function updateUserRoleInSheet(email, newRole, actingEmail) {
@@ -624,14 +812,23 @@ function updateUserProfileInSheet(email, updatesObj, actingEmail) {
   if (user.role !== 'WEBMASTER') return { success: false, message: 'Khusus Webmaster.' };
 
   const sheet = ss.getSheetByName(SHEET_NAMES.USERS);
+  ensureUserPasswordColumns_(sheet);
   const data = sheet.getDataRange().getValues();
+  const headers = data[0].map(h => String(h).trim());
+  const hashColIdx = headers.indexOf('Password_Hash');
+  const defColIdx = headers.indexOf('Default_Password');
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][0]).trim().toLowerCase() === String(email).trim().toLowerCase()) {
       if (updatesObj && updatesObj.name !== undefined) {
         sheet.getRange(i + 1, 2).setValue(String(updatesObj.name).trim());
       }
       if (updatesObj && updatesObj.role !== undefined) {
-        sheet.getRange(i + 1, 3).setValue(String(updatesObj.role).trim().toUpperCase());
+        const nextRole = String(updatesObj.role).trim().toUpperCase();
+        sheet.getRange(i + 1, 3).setValue(nextRole);
+        if (nextRole !== 'GUEST' && hashColIdx !== -1 && !String(data[i][hashColIdx] || '').trim()) {
+          sheet.getRange(i + 1, hashColIdx + 1).setValue(hashPassword_(DEFAULT_USER_PASSWORD));
+          if (defColIdx !== -1) sheet.getRange(i + 1, defColIdx + 1).setValue(true);
+        }
       }
       if (updatesObj && updatesObj.wa !== undefined) {
         sheet.getRange(i + 1, 4).setValue(String(updatesObj.wa).trim());

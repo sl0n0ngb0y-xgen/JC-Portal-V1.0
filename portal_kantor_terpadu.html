@@ -139,21 +139,45 @@
             <div class="p-6 sm:p-8 space-y-5">
                 <form id="form-login" onsubmit="handleManualLogin(event); return false;" class="space-y-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Email Kantor Terdaftar</label>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Email Akun Terdaftar</label>
                         <div class="relative">
                             <i class="fa-solid fa-envelope absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                            <input type="email" id="login-email" required placeholder="nama.akun@kantor.id" class="w-full pl-10 pr-4 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            <input type="email" id="login-email" required placeholder="nama.akun@gmail.com" class="w-full pl-10 pr-4 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500">
                         </div>
                     </div>
-                    <button type="submit" class="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold rounded-xl shadow-md shadow-brand-600/20 transition-all flex items-center justify-center gap-2">
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">Password</label>
+                            <span class="text-[11px] text-slate-400">Default awal: <code class="font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">12345678</code></span>
+                        </div>
+                        <div class="relative">
+                            <i class="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                            <input type="password" id="login-password" placeholder="Masukkan password 8 karakter..." class="w-full pl-10 pr-10 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            <button type="button" onclick="togglePasswordVisibility('login-password', 'login-pw-eye')" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-sm">
+                                <i id="login-pw-eye" class="fa-regular fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="login-error-alert" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        <span id="login-error-msg">Email atau password salah.</span>
+                    </div>
+                    <button type="submit" id="btn-login-submit" class="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold rounded-xl shadow-md shadow-brand-600/20 transition-all flex items-center justify-center gap-2">
                         <i class="fa-solid fa-right-to-bracket"></i>
-                        <span>Masuk dengan Email Kantor</span>
+                        <span id="btn-login-submit-text">Masuk ke JC PORTAL</span>
                     </button>
                 </form>
 
+                <!-- Akses Guest Tanpa Password -->
+                <button type="button" onclick="loginAsGuestDirect()" class="w-full py-2.5 px-4 rounded-xl border border-slate-300 bg-slate-100/80 hover:bg-slate-200/80 text-slate-700 text-xs font-bold transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-eye text-slate-500"></i>
+                    <span>Masuk sebagai Guest / Tamu (Tanpa Password — Read-Only)</span>
+                </button>
+
+                <div id="local-role-sim-wrapper" class="space-y-3">
                 <div class="relative flex py-1 items-center">
                     <div class="grow border-t border-slate-200"></div>
-                    <span class="shrink mx-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Simulasi Login Cepat Per Role</span>
+                    <span class="shrink mx-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Simulasi Login Cepat (Mode Preview Lokal)</span>
                     <div class="grow border-t border-slate-200"></div>
                 </div>
 
@@ -222,6 +246,7 @@
                             <p class="text-[11px] text-slate-500">Read-Only (Pengumuman HRD &amp; Loker)</p>
                         </div>
                     </button>
+                </div>
                 </div>
             </div>
         </div>
@@ -314,9 +339,13 @@
                             <p id="sidebar-user-role" class="text-[11px] text-emerald-400 truncate font-medium">Super Admin</p>
                         </div>
                     </div>
+                    <button id="btn-sidebar-change-pw" onclick="openChangePasswordModal(false)" class="w-full py-1.5 px-2.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-key text-[11px]"></i>
+                        <span>Ganti Password</span>
+                    </button>
                     <button onclick="openLoginScreen()" class="w-full py-1.5 px-2.5 bg-slate-700/80 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5">
                         <i class="fa-solid fa-repeat text-[11px]"></i>
-                        <span>Ganti Akun / Role</span>
+                        <span>Ganti Akun / Logout</span>
                     </button>
                 </div>
             </div>
@@ -370,6 +399,22 @@
 
             <!-- Content Views Container -->
             <main class="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto space-y-6">
+
+                <!-- Banner Peringatan Default Password (Muncul terus sampai password diganti) -->
+                <div id="default-password-banner" class="hidden no-print bg-amber-50 border-2 border-amber-300 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                    <div class="flex items-start sm:items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-shield-exclamation"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs sm:text-sm font-extrabold text-amber-950">Keamanan Akun: Anda masih menggunakan password default (<code class="bg-amber-200/80 px-1.5 py-0.5 rounded">12345678</code>)!</p>
+                            <p class="text-xs text-amber-800 mt-0.5">Segera ganti dengan password baru <strong>8 karakter kombinasi huruf dan angka</strong>. Peringatan ini akan terus muncul setiap kali login sampai password diganti.</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="openChangePasswordModal(true)" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-xs shrink-0 transition-colors">
+                        <i class="fa-solid fa-key mr-1"></i> Ganti Password Sekarang
+                    </button>
+                </div>
 
                 <!-- ========================================================= -->
                 <!-- TAB 1: DASHBOARD UTAMA (PENGUMUMAN & LOWONGAN PEKERJAAN)  -->
@@ -1679,6 +1724,63 @@
         </div>
     </div>
 
+    <!-- Modal: Ganti Password & Peringatan Default Password -->
+    <div id="modal-change-password" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden fade-in">
+            <div class="px-6 py-4 border-b border-slate-100 bg-amber-50/80 flex items-center justify-between">
+                <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+                    <i class="fa-solid fa-key text-amber-600"></i>
+                    <span id="pw-modal-title">Ganti Password Akun</span>
+                </h3>
+                <button type="button" onclick="toggleModal('modal-change-password')" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="form-change-password" onsubmit="handleChangePassword(event); return false;" class="p-6 space-y-4">
+                <div id="pw-default-warning-box" class="hidden p-3.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs leading-relaxed">
+                    <p class="font-extrabold flex items-center gap-1.5 mb-1"><i class="fa-solid fa-triangle-exclamation text-amber-600"></i> Anjuran Keamanan Password Default</p>
+                    <p>Akun Anda masih memakai password bawaan (<strong>12345678</strong>). Demi keamanan data JC PORTAL, sangat dianjurkan untuk segera menggantinya sekarang. Notifikasi ini akan terus muncul setiap kali Anda login sampai password diganti.</p>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Password Saat Ini *</label>
+                    <div class="relative">
+                        <input type="password" id="pw-current" required placeholder="Masukkan password saat ini (default: 12345678)" class="w-full px-3.5 pr-10 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500">
+                        <button type="button" onclick="togglePasswordVisibility('pw-current', 'pw-cur-eye')" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-sm">
+                            <i id="pw-cur-eye" class="fa-regular fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Password Baru (8 Karakter Huruf &amp; Angka) *</label>
+                    <div class="relative">
+                        <input type="password" id="pw-new" required maxlength="8" placeholder="Contoh: Jc2026ab" oninput="validateNewPasswordLive()" class="w-full px-3.5 pr-10 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500">
+                        <button type="button" onclick="togglePasswordVisibility('pw-new', 'pw-new-eye')" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-sm">
+                            <i id="pw-new-eye" class="fa-regular fa-eye"></i>
+                        </button>
+                    </div>
+                    <p id="pw-rule-hint" class="text-[11px] text-slate-500 mt-1">Syarat: tepat 8 karakter, wajib mengandung huruf (A-Z) dan angka (0-9), tanpa spasi/simbol.</p>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Konfirmasi Password Baru *</label>
+                    <div class="relative">
+                        <input type="password" id="pw-confirm" required maxlength="8" placeholder="Ketik ulang password baru" class="w-full px-3.5 pr-10 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500">
+                        <button type="button" onclick="togglePasswordVisibility('pw-confirm', 'pw-conf-eye')" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-sm">
+                            <i id="pw-conf-eye" class="fa-regular fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="pw-error-alert" class="hidden p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold"></div>
+
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="toggleModal('modal-change-password')" id="btn-pw-later" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Nanti Saja</button>
+                    <button type="submit" id="btn-pw-save" class="px-5 py-2 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white rounded-xl shadow-xs">Simpan Password Baru</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Modal: Konfirmasi Hapus Item -->
     <div id="modal-confirm-delete" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full overflow-hidden fade-in">
@@ -2088,15 +2190,23 @@
             } catch (e) {}
         }
 
+        const DEFAULT_USER_PASSWORD = '12345678';
+        const localPasswords = {};
+        let isAuthenticatedSession = false;
+
+        function isValidNewPassword(pwd) {
+            return /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z0-9]{8}$/.test(String(pwd || ''));
+        }
+
         function runGas(fnName, args, onSuccess, onFailure) {
             if (!IS_GAS_ENV) return false;
             const callArgs = Array.isArray(args) ? args.slice() : [];
-            if (fnName !== 'getInitialPortalData') {
+            if (fnName !== 'getInitialPortalData' && fnName !== 'authenticateUser') {
                 callArgs.push((currentUser && currentUser.email) ? currentUser.email : '');
             }
             const runner = google.script.run
                 .withSuccessHandler(res => {
-                    if (res && res.success === false && res.message) {
+                    if (res && res.success === false && res.message && fnName !== 'authenticateUser' && fnName !== 'changeUserPassword') {
                         showToast(res.message, 'error');
                     }
                     if (onSuccess) onSuccess(res);
@@ -2146,8 +2256,15 @@
                 if (Array.isArray(res.registeredUsers) && res.registeredUsers.length > 0) {
                     registeredUsers = res.registeredUsers;
                 }
-                if (res.user) {
-                    currentUser = { ...res.user };
+                // Jika sudah login di sesi ini, sinkronkan info user terbaru; jika belum, tetap tunggu login password
+                if (isAuthenticatedSession && currentUser && currentUser.email) {
+                    const refreshedMe = registeredUsers.find(u => u.email.toLowerCase() === currentUser.email.toLowerCase());
+                    if (refreshedMe) currentUser = { ...refreshedMe };
+                } else {
+                    const emailEl = document.getElementById('login-email');
+                    if (emailEl && !emailEl.value && savedEmail) {
+                        emailEl.value = savedEmail;
+                    }
                 }
                 designOrders = Array.isArray(res.designOrders) ? res.designOrders : [];
                 studioBookings = Array.isArray(res.studioBookings) ? res.studioBookings : [];
@@ -2156,10 +2273,6 @@
                 jobVacancies = Array.isArray(res.jobVacancies) ? res.jobVacancies : [];
                 products = Array.isArray(res.products) ? res.products : [];
 
-                // Auto-login jika Google Workspace mendeteksi akun atau user sudah pernah login sebelumnya
-                if (res.user && (res.user.autoDetected || (savedEmail && res.user.role !== 'GUEST'))) {
-                    document.getElementById('login-screen').classList.add('hidden');
-                }
                 populateDesignYearFilter();
                 populateDesignerEvalFilters(true);
                 populateWebmasterHistoryYears(true);
@@ -2456,9 +2569,16 @@
             renderAll();
 
             if (IS_GAS_ENV) {
+                const simWrap = document.getElementById('local-role-sim-wrapper');
+                if (simWrap) simWrap.classList.add('hidden');
                 syncFromGoogleSheets(false);
             } else {
                 updateGasStatusBadge('local');
+                registeredUsers.forEach(u => {
+                    if (u.role !== 'GUEST' && u.isDefaultPassword === undefined) {
+                        u.isDefaultPassword = true;
+                    }
+                });
             }
         });
 
@@ -2490,38 +2610,272 @@
             return creatorEmail && creatorEmail.toLowerCase() === currentUser.email.toLowerCase();
         }
 
+        function togglePasswordVisibility(inputId, iconId) {
+            const inp = document.getElementById(inputId);
+            const ico = document.getElementById(iconId);
+            if (!inp) return;
+            if (inp.type === 'password') {
+                inp.type = 'text';
+                if (ico) ico.className = 'fa-regular fa-eye-slash';
+            } else {
+                inp.type = 'password';
+                if (ico) ico.className = 'fa-regular fa-eye';
+            }
+        }
+
+        function showLoginError(msg) {
+            const box = document.getElementById('login-error-alert');
+            const span = document.getElementById('login-error-msg');
+            if (box && span) {
+                span.textContent = msg;
+                box.classList.remove('hidden');
+            }
+            showToast(msg, 'error');
+        }
+
+        function hideLoginError() {
+            const box = document.getElementById('login-error-alert');
+            if (box) box.classList.add('hidden');
+        }
+
+        function setLoginSubmitting(isBusy) {
+            const btn = document.getElementById('btn-login-submit');
+            const txt = document.getElementById('btn-login-submit-text');
+            if (!btn || !txt) return;
+            btn.disabled = isBusy;
+            btn.classList.toggle('opacity-70', isBusy);
+            txt.textContent = isBusy ? 'Memverifikasi akun...' : 'Masuk ke JC PORTAL';
+        }
+
         function handleManualLogin(e) {
             e.preventDefault();
+            hideLoginError();
             const emailInput = document.getElementById('login-email').value.trim().toLowerCase();
-            const foundUser = registeredUsers.find(u => u.email.toLowerCase() === emailInput);
+            const passwordInput = document.getElementById('login-password').value;
 
-            if (!foundUser) {
-                showToast('Email tidak terdaftar di whitelist kantor. Hubungi Webmaster.', 'error');
+            if (!emailInput) {
+                showLoginError('Masukkan email akun terdaftar.');
                 return;
             }
+
+            if (IS_GAS_ENV) {
+                setLoginSubmitting(true);
+                runGas('authenticateUser', [emailInput, passwordInput], res => {
+                    setLoginSubmitting(false);
+                    if (!res || !res.success || !res.user) {
+                        showLoginError((res && res.message) ? res.message : 'Login gagal. Periksa email dan password Anda.');
+                        return;
+                    }
+                    currentUser = { ...res.user };
+                    document.getElementById('login-password').value = '';
+                    completeLogin(true);
+                }, () => {
+                    setLoginSubmitting(false);
+                    showLoginError('Terjadi kendala koneksi ke server. Coba lagi.');
+                });
+                return;
+            }
+
+            // Mode Preview Lokal
+            const foundUser = registeredUsers.find(u => u.email.toLowerCase() === emailInput);
+            if (!foundUser) {
+                showLoginError('Email tidak terdaftar di whitelist kantor. Hubungi Webmaster.');
+                return;
+            }
+            if (foundUser.role !== 'GUEST') {
+                const expectedPw = localPasswords[emailInput] || DEFAULT_USER_PASSWORD;
+                if (!passwordInput) {
+                    showLoginError('Password wajib diisi untuk akun non-Guest (default: 12345678).');
+                    return;
+                }
+                if (passwordInput !== expectedPw) {
+                    showLoginError('Password salah. Periksa kembali password Anda (default awal: 12345678).');
+                    return;
+                }
+                foundUser.isDefaultPassword = (expectedPw === DEFAULT_USER_PASSWORD);
+            } else {
+                foundUser.isDefaultPassword = false;
+            }
             currentUser = { ...foundUser };
-            completeLogin();
+            document.getElementById('login-password').value = '';
+            completeLogin(true);
+        }
+
+        function loginAsGuestDirect() {
+            hideLoginError();
+            const guestUser = registeredUsers.find(u => u.role === 'GUEST') || {
+                email: 'guest@kantor.id',
+                name: 'Guest (Tamu)',
+                role: 'GUEST',
+                wa: '',
+                isDefaultPassword: false
+            };
+            currentUser = { ...guestUser, isDefaultPassword: false };
+            completeLogin(false);
         }
 
         function loginAsRole(roleKey) {
+            if (IS_GAS_ENV && roleKey !== 'GUEST') {
+                showToast('Silakan masuk menggunakan email dan password Anda.', 'info');
+                return;
+            }
             const foundUser = registeredUsers.find(u => u.role === roleKey);
             if (foundUser) {
-                currentUser = { ...foundUser };
-                completeLogin();
+                const emailLower = foundUser.email.toLowerCase();
+                const expectedPw = localPasswords[emailLower] || DEFAULT_USER_PASSWORD;
+                currentUser = {
+                    ...foundUser,
+                    isDefaultPassword: foundUser.role !== 'GUEST' && expectedPw === DEFAULT_USER_PASSWORD
+                };
+                completeLogin(true);
             }
         }
 
-        function completeLogin() {
-            setSavedPortalEmail(currentUser.email);
+        function completeLogin(shouldPromptDefaultPw = true) {
+            isAuthenticatedSession = true;
+            if (currentUser.role !== 'GUEST') {
+                setSavedPortalEmail(currentUser.email);
+            }
             document.getElementById('login-screen').classList.add('hidden');
             applyRolePermissions();
             switchTab('dashboard');
             renderAll();
             showToast(`Login sebagai ${currentUser.name} (${ROLE_PERMISSIONS[currentUser.role].label})`, 'success');
+
+            if (shouldPromptDefaultPw && currentUser.role !== 'GUEST' && currentUser.isDefaultPassword) {
+                setTimeout(() => openChangePasswordModal(true), 250);
+            }
         }
 
         function openLoginScreen() {
+            hideLoginError();
+            const pwInput = document.getElementById('login-password');
+            if (pwInput) pwInput.value = '';
+            const modalPw = document.getElementById('modal-change-password');
+            if (modalPw && !modalPw.classList.contains('hidden')) {
+                toggleModal('modal-change-password');
+            }
             document.getElementById('login-screen').classList.remove('hidden');
+        }
+
+        function openChangePasswordModal(isReminderMode = false) {
+            if (!currentUser || currentUser.role === 'GUEST') return;
+            const form = document.getElementById('form-change-password');
+            if (form) form.reset();
+            const errBox = document.getElementById('pw-error-alert');
+            if (errBox) errBox.classList.add('hidden');
+            const hint = document.getElementById('pw-rule-hint');
+            if (hint) {
+                hint.className = 'text-[11px] text-slate-500 mt-1';
+                hint.textContent = 'Syarat: tepat 8 karakter, wajib mengandung huruf (A-Z) dan angka (0-9), tanpa spasi/simbol.';
+            }
+
+            const warnBox = document.getElementById('pw-default-warning-box');
+            const titleEl = document.getElementById('pw-modal-title');
+            const laterBtn = document.getElementById('btn-pw-later');
+            const showWarning = Boolean(isReminderMode || currentUser.isDefaultPassword);
+            if (warnBox) warnBox.classList.toggle('hidden', !showWarning);
+            if (titleEl) titleEl.textContent = showWarning ? 'Segera Ganti Default Password' : 'Ganti Password Akun';
+            if (laterBtn) laterBtn.textContent = showWarning ? 'Ingatkan Nanti' : 'Batal';
+
+            const modal = document.getElementById('modal-change-password');
+            if (modal && modal.classList.contains('hidden')) {
+                toggleModal('modal-change-password');
+            }
+        }
+
+        function validateNewPasswordLive() {
+            const val = document.getElementById('pw-new').value;
+            const hint = document.getElementById('pw-rule-hint');
+            if (!hint) return;
+            if (!val) {
+                hint.className = 'text-[11px] text-slate-500 mt-1';
+                hint.textContent = 'Syarat: tepat 8 karakter, wajib mengandung huruf (A-Z) dan angka (0-9), tanpa spasi/simbol.';
+                return;
+            }
+            if (val === DEFAULT_USER_PASSWORD) {
+                hint.className = 'text-[11px] font-semibold text-rose-600 mt-1';
+                hint.textContent = 'Password baru tidak boleh sama dengan default (12345678).';
+                return;
+            }
+            if (isValidNewPassword(val)) {
+                hint.className = 'text-[11px] font-semibold text-emerald-600 mt-1';
+                hint.textContent = '✓ Format valid (8 karakter kombinasi huruf & angka).';
+            } else {
+                hint.className = 'text-[11px] font-semibold text-amber-600 mt-1';
+                hint.textContent = `Belum sesuai (${val.length}/8 karakter) — wajib tepat 8 karakter gabungan huruf & angka.`;
+            }
+        }
+
+        function handleChangePassword(e) {
+            e.preventDefault();
+            if (!currentUser || currentUser.role === 'GUEST') return;
+
+            const curPw = document.getElementById('pw-current').value;
+            const newPw = document.getElementById('pw-new').value;
+            const confPw = document.getElementById('pw-confirm').value;
+            const errBox = document.getElementById('pw-error-alert');
+            const showPwErr = (msg) => {
+                if (errBox) {
+                    errBox.textContent = msg;
+                    errBox.classList.remove('hidden');
+                }
+            };
+            if (errBox) errBox.classList.add('hidden');
+
+            if (!curPw) {
+                showPwErr('Password saat ini wajib diisi.');
+                return;
+            }
+            if (!isValidNewPassword(newPw)) {
+                showPwErr('Password baru harus tepat 8 karakter kombinasi huruf dan angka (tanpa spasi/simbol).');
+                return;
+            }
+            if (newPw === DEFAULT_USER_PASSWORD) {
+                showPwErr('Password baru tidak boleh sama dengan password default (12345678).');
+                return;
+            }
+            if (newPw !== confPw) {
+                showPwErr('Konfirmasi password baru tidak cocok.');
+                return;
+            }
+
+            const saveBtn = document.getElementById('btn-pw-save');
+            const onUpdated = () => {
+                currentUser.isDefaultPassword = false;
+                const reg = registeredUsers.find(u => u.email.toLowerCase() === currentUser.email.toLowerCase());
+                if (reg) reg.isDefaultPassword = false;
+                applyRolePermissions();
+                renderWebmasterUsers();
+                toggleModal('modal-change-password');
+                showToast('Password baru berhasil disimpan! Notifikasi default password telah dinonaktifkan.', 'success');
+            };
+
+            if (IS_GAS_ENV) {
+                if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Menyimpan...'; }
+                runGas('changeUserPassword', [currentUser.email, curPw, newPw], res => {
+                    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Simpan Password Baru'; }
+                    if (!res || !res.success) {
+                        showPwErr((res && res.message) ? res.message : 'Gagal memperbarui password.');
+                        return;
+                    }
+                    onUpdated();
+                }, () => {
+                    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Simpan Password Baru'; }
+                    showPwErr('Gagal menghubungi server Google Sheets.');
+                });
+                return;
+            }
+
+            // Mode Preview Lokal
+            const emailLower = currentUser.email.toLowerCase();
+            const expectedPw = localPasswords[emailLower] || DEFAULT_USER_PASSWORD;
+            if (curPw !== expectedPw) {
+                showPwErr('Password saat ini tidak sesuai.');
+                return;
+            }
+            localPasswords[emailLower] = newPw;
+            onUpdated();
         }
 
         function applyRolePermissions() {
@@ -2536,10 +2890,16 @@
             document.getElementById('form-creator-preview').textContent = `${currentUser.name} (${currentUser.email})`;
 
             // Sembunyikan menu modul lain & tombol notif perangkat saat mode Guest
-            ['nav-design', 'nav-studio', 'nav-meeting', 'nav-knowledge', 'btn-device-notif'].forEach(elId => {
+            ['nav-design', 'nav-studio', 'nav-meeting', 'nav-knowledge', 'btn-device-notif', 'btn-sidebar-change-pw'].forEach(elId => {
                 const el = document.getElementById(elId);
                 if (el) el.classList.toggle('hidden', isGuest);
             });
+
+            // Banner pengingat ganti default password
+            const defaultPwBanner = document.getElementById('default-password-banner');
+            if (defaultPwBanner) {
+                defaultPwBanner.classList.toggle('hidden', isGuest || !currentUser.isDefaultPassword);
+            }
 
             // Tampilkan/sembunyikan menu Webmaster
             document.getElementById('nav-webmaster-wrapper').classList.toggle('hidden', !perms.canManageUsers);
@@ -4164,9 +4524,17 @@
             tbody.innerHTML = registeredUsers.map((u, idx) => {
                 const roleInfo = ROLE_PERMISSIONS[u.role] || ROLE_PERMISSIONS.GUEST;
                 const isSelf = currentUser && u.email.toLowerCase() === currentUser.email.toLowerCase();
+                const pwBadge = u.role === 'GUEST'
+                    ? '<span class="inline-block mt-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">Tanpa Password</span>'
+                    : (u.isDefaultPassword
+                        ? '<span class="inline-block mt-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200"><i class="fa-solid fa-triangle-exclamation mr-0.5"></i>Default PW</span>'
+                        : '<span class="inline-block mt-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200"><i class="fa-solid fa-lock mr-0.5"></i>Password Aktif</span>');
                 return `
                     <tr class="hover:bg-slate-50/80 transition-colors">
-                        <td class="py-3.5 px-4 font-bold text-xs text-slate-900">${escHtml(u.name)}</td>
+                        <td class="py-3.5 px-4 font-bold text-xs text-slate-900">
+                            <div>${escHtml(u.name)}</div>
+                            ${pwBadge}
+                        </td>
                         <td class="py-3.5 px-4 text-xs text-slate-600">${escHtml(u.email)}</td>
                         <td class="py-3.5 px-4 text-xs text-slate-600">${escHtml(u.wa || '-')}</td>
                         <td class="py-3.5 px-4">
@@ -4177,12 +4545,32 @@
                         <td class="py-3.5 px-4 text-xs text-slate-500">${escHtml(roleInfo.summary)}</td>
                         <td class="py-3.5 px-4 text-center whitespace-nowrap">
                             <button type="button" onclick="openEditUserModal(${idx})" title="Edit Nama, No. WhatsApp & Role" class="px-2.5 py-1 text-[11px] font-semibold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-lg mr-1"><i class="fa-solid fa-pen-to-square mr-1"></i>Edit</button>
+                            ${u.role !== 'GUEST' ? `<button type="button" onclick="resetUserPasswordByWebmasterUI(${idx})" title="Reset Password ke Default (12345678)" class="px-2 py-1 text-[11px] font-semibold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg mr-1"><i class="fa-solid fa-key"></i> Reset PW</button>` : ''}
                             <button type="button" onclick="switchToUserAccount(${idx})" title="Uji Login sebagai Akun Ini" class="px-2.5 py-1 text-[11px] font-semibold bg-slate-100 hover:bg-brand-50 text-slate-700 hover:text-brand-700 rounded-lg mr-1">Uji Login</button>
                             ${(!isSelf && u.email !== 'webmaster@kantor.id') ? `<button type="button" onclick="deleteWebmasterUser(${idx})" title="Hapus User" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg"><i class="fa-solid fa-trash-can"></i></button>` : ''}
                         </td>
                     </tr>
                 `;
             }).join('');
+        }
+
+        function resetUserPasswordByWebmasterUI(idx) {
+            if (currentUser.role !== 'WEBMASTER') return;
+            const u = registeredUsers[idx];
+            if (!u || u.role === 'GUEST') return;
+            if (!window.confirm(`Reset password akun ${u.name} (${u.email}) kembali ke default "12345678"?`)) return;
+
+            u.isDefaultPassword = true;
+            localPasswords[u.email.toLowerCase()] = DEFAULT_USER_PASSWORD;
+            if (currentUser.email.toLowerCase() === u.email.toLowerCase()) {
+                currentUser.isDefaultPassword = true;
+                applyRolePermissions();
+            }
+            if (IS_GAS_ENV) {
+                runGas('resetUserPasswordByWebmaster', [u.email]);
+            }
+            renderWebmasterUsers();
+            showToast(`Password ${u.name} direset ke default (12345678).`, 'info');
         }
 
         function openEditUserModal(idx) {
@@ -4250,7 +4638,7 @@
                 return;
             }
 
-            const newUser = { name, email, wa, role };
+            const newUser = { name, email, wa, role, isDefaultPassword: role !== 'GUEST' };
             registeredUsers.push(newUser);
             if (IS_GAS_ENV) {
                 runGas('addUserByWebmaster', [newUser]);
