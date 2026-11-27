@@ -30,8 +30,13 @@ const SHEET_NAMES = {
   MEETING: 'Jadwal_Meeting',
   ANNOUNCEMENTS: 'Pengumuman',
   JOBS: 'Lowongan_Kerja',
-  PRODUCTS: 'Product_Knowledge'
+  PRODUCTS: 'Product_Knowledge',
+  LOANS: 'Peminjaman_Produk'
 };
+
+// Role yang berwenang menyetujui (ACC) Peminjaman Produk (Kapten Tim / Kepala Divisi)
+const LOAN_LEADER_ROLES = ['KAPTEN_TIM', 'KEPALA_MP', 'KEPALA_DM', 'KEPALA_BRANDING', 'KEPALA_DESAIN', 'KEPALA_KONTEN', 'WEBMASTER'];
+const LOAN_WAREHOUSE_ROLES = ['ADMIN_GUDANG', 'WEBMASTER'];
 
 /**
  * Helper: Mendapatkan instance Spreadsheet Database (bound atau standalone)
@@ -131,6 +136,11 @@ function setupDatabaseSheets() {
     ],
     [SHEET_NAMES.PRODUCTS]: [
       'ID', 'SKU', 'Nama_Produk', 'Brand_Toko', 'Pembuat_Email', 'USP', 'Spesifikasi', 'FAQ'
+    ],
+    [SHEET_NAMES.LOANS]: [
+      'ID', 'Tanggal_ISO', 'Waktu_Pinjam', 'Nama_Produk', 'Peminjam', 'Pembuat_Email',
+      'Keperluan', 'Divisi_Toko', 'ACC_Kepala', 'ACC_Kepala_Oleh', 'Status',
+      'ACC_Gudang', 'ACC_Gudang_Oleh', 'Waktu_Kembali'
     ]
   };
 
@@ -314,6 +324,25 @@ function getInitialPortalData(actingEmail) {
     faq: String(r.FAQ || '').trim()
   })).filter(p => p.id).reverse();
 
+  // 7. Peminjaman Produk
+  const loansRaw = getSheetDataAsObjects(ss.getSheetByName(SHEET_NAMES.LOANS));
+  const productLoans = loansRaw.map(r => ({
+    id: String(r.ID || '').trim(),
+    dateISO: normalizeCellDateISO_(r.Tanggal_ISO) || getTodayISO_(),
+    borrowTime: normalizeCellTimestamp_(r.Waktu_Pinjam),
+    productName: String(r.Nama_Produk || '').trim(),
+    borrower: String(r.Peminjam || '').trim(),
+    creatorEmail: String(r.Pembuat_Email || '').trim(),
+    purpose: String(r.Keperluan || '').trim(),
+    division: String(r.Divisi_Toko || '').trim(),
+    leaderAcc: String(r.ACC_Kepala || 'Menunggu').trim() || 'Menunggu',
+    leaderAccBy: String(r.ACC_Kepala_Oleh || '').trim(),
+    status: String(r.Status || 'Booking').trim() || 'Booking',
+    warehouseAcc: String(r.ACC_Gudang).toUpperCase() === 'TRUE',
+    warehouseAccBy: String(r.ACC_Gudang_Oleh || '').trim(),
+    returnedAt: normalizeCellTimestamp_(r.Waktu_Kembali)
+  })).filter(l => l.id).reverse();
+
   return {
     success: true,
     spreadsheetUrl: ss.getUrl(),
@@ -324,7 +353,8 @@ function getInitialPortalData(actingEmail) {
     meetingBookings: meetingBookings,
     announcements: announcements,
     jobVacancies: jobVacancies,
-    products: products
+    products: products,
+    productLoans: productLoans
   };
 }
 
@@ -392,9 +422,23 @@ function updateDesignOrderFields(orderId, updatesObj, actingEmail) {
   ensureDesignOrderTimeColumns_(sheet);
   const data = sheet.getDataRange().getValues();
   const headers = data[0];
+  const statusColIdx = headers.indexOf('Status');
+  const accColIdx = headers.indexOf('ACC_Admin');
 
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][0]).trim() === String(orderId).trim()) {
+      const currentStatus = statusColIdx !== -1 ? String(data[i][statusColIdx] || '').trim() : '';
+      const currentAcc = accColIdx !== -1 && String(data[i][accColIdx]).toUpperCase() === 'TRUE';
+
+      // Order berstatus Selesai bersifat Read-Only kecuali ajukan Revisi atau Menunggu ACC
+      if (currentStatus === 'Selesai') {
+        const isRevisionOp = updatesObj && updatesObj.Status === 'Revisi';
+        const isAccOp = updatesObj && Object.keys(updatesObj).every(k => k === 'ACC_Admin') && !currentAcc && Boolean(updatesObj.ACC_Admin);
+        if (!isRevisionOp && !isAccOp) {
+          return { success: false, message: 'Order yang sudah Selesai bersifat Read-Only (kecuali Revisi atau Menunggu ACC).' };
+        }
+      }
+
       Object.keys(updatesObj).forEach(colName => {
         const colIndex = headers.indexOf(colName);
         if (colIndex !== -1) {
@@ -413,7 +457,7 @@ function updateDesignOrderFields(orderId, updatesObj, actingEmail) {
 function saveStudioBookingToSheet(bookingObj, actingEmail) {
   const ss = getPortalSpreadsheet_();
   const user = getCurrentUserContext_(ss, actingEmail || (bookingObj && bookingObj.creatorEmail));
-  if (!['WEBMASTER', 'WEB_ADMIN', 'KEPALA_BRANDING', 'KEPALA_DESAIN', 'KEPALA_KONTEN', 'DESIGNER'].includes(user.role)) {
+  if (!['WEBMASTER', 'WEB_ADMIN', 'KEPALA_BRANDING', 'KEPALA_DESAIN', 'KEPALA_KONTEN', 'KAPTEN_TIM', 'DESIGNER'].includes(user.role)) {
     return { success: false, message: 'Akses ditolak untuk booking studio foto.' };
   }
 
@@ -450,7 +494,7 @@ function saveStudioBookingToSheet(bookingObj, actingEmail) {
 function saveMeetingBookingToSheet(bookingObj, actingEmail) {
   const ss = getPortalSpreadsheet_();
   const user = getCurrentUserContext_(ss, actingEmail || (bookingObj && bookingObj.creatorEmail));
-  if (!['WEBMASTER', 'WEB_ADMIN', 'KEPALA_MP', 'HRD', 'KEPALA_DM', 'KEPALA_BRANDING', 'KEPALA_DESAIN', 'KEPALA_KONTEN'].includes(user.role)) {
+  if (!['WEBMASTER', 'WEB_ADMIN', 'KEPALA_MP', 'HRD', 'KEPALA_DM', 'KEPALA_BRANDING', 'KEPALA_DESAIN', 'KEPALA_KONTEN', 'KAPTEN_TIM'].includes(user.role)) {
     return { success: false, message: 'Akses ditolak untuk booking ruang meeting.' };
   }
 
@@ -554,6 +598,171 @@ function saveProductKnowledgeToSheet(prodObj, actingEmail) {
 }
 
 /**
+ * 5B. CRUD & WORKFLOW MODUL PEMINJAMAN PRODUK
+ */
+function ensureLoansSheet_(ss) {
+  let sheet = ss.getSheetByName(SHEET_NAMES.LOANS);
+  if (!sheet) {
+    setupDatabaseSheets();
+    sheet = ss.getSheetByName(SHEET_NAMES.LOANS);
+  }
+  return sheet;
+}
+
+function saveProductLoanToSheet(loanObj, actingEmail) {
+  const ss = getPortalSpreadsheet_();
+  const user = getCurrentUserContext_(ss, actingEmail || (loanObj && loanObj.creatorEmail));
+  if (user.role === 'GUEST') {
+    return { success: false, message: 'Akses ditolak: Guest tidak dapat mengajukan peminjaman produk.' };
+  }
+
+  const sheet = ensureLoansSheet_(ss);
+  const nextId = loanObj.id || ('PJM-' + String(sheet.getLastRow() + 1).padStart(4, '0'));
+  const borrowTime = loanObj.borrowTime || getNowTimestampISO_();
+  const dateISO = loanObj.dateISO || borrowTime.slice(0, 10) || getTodayISO_();
+
+  sheet.appendRow([
+    nextId,
+    dateISO,
+    borrowTime,
+    String(loanObj.productName || '').trim(),
+    String(loanObj.borrower || user.name).trim(),
+    user.email,
+    String(loanObj.purpose || '').trim(),
+    String(loanObj.division || '').trim(),
+    'Menunggu',
+    '',
+    'Booking',
+    false,
+    '',
+    ''
+  ]);
+
+  return { success: true, id: nextId, borrowTime: borrowTime };
+}
+
+function updateProductLoanLeaderAcc(loanId, decision, actingEmail) {
+  const ss = getPortalSpreadsheet_();
+  const user = getCurrentUserContext_(ss, actingEmail);
+  if (!LOAN_LEADER_ROLES.includes(user.role)) {
+    return { success: false, message: 'Akses ditolak: Hanya Kapten Tim atau Kepala Divisi yang dapat mengubah ACC ini.' };
+  }
+
+  const validDecisions = ['Menunggu', 'Ya', 'Cancel'];
+  const cleanDecision = validDecisions.includes(decision) ? decision : 'Menunggu';
+
+  const sheet = ensureLoansSheet_(ss);
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  const accCol = headers.indexOf('ACC_Kepala');
+  const accByCol = headers.indexOf('ACC_Kepala_Oleh');
+  const whAccCol = headers.indexOf('ACC_Gudang');
+
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() === String(loanId).trim()) {
+      const alreadyReturned = whAccCol !== -1 && String(data[i][whAccCol]).toUpperCase() === 'TRUE';
+      if (alreadyReturned) {
+        return { success: false, message: 'Peminjaman yang sudah kembali & di-ACC gudang tidak dapat diubah.' };
+      }
+      if (accCol !== -1) sheet.getRange(i + 1, accCol + 1).setValue(cleanDecision);
+      if (accByCol !== -1) sheet.getRange(i + 1, accByCol + 1).setValue(cleanDecision === 'Menunggu' ? '' : user.name);
+      return { success: true, leaderAcc: cleanDecision, leaderAccBy: cleanDecision === 'Menunggu' ? '' : user.name };
+    }
+  }
+  return { success: false, message: 'Data peminjaman tidak ditemukan.' };
+}
+
+function updateProductLoanStatus(loanId, newStatus, actingEmail) {
+  const ss = getPortalSpreadsheet_();
+  const user = getCurrentUserContext_(ss, actingEmail);
+  const validStatuses = ['Booking', 'Disiapkan', 'Sudah Siap', 'Diambil', 'Selesai!'];
+  if (!validStatuses.includes(newStatus)) {
+    return { success: false, message: 'Status peminjaman tidak valid.' };
+  }
+
+  const sheet = ensureLoansSheet_(ss);
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  const emailCol = headers.indexOf('Pembuat_Email');
+  const leaderAccCol = headers.indexOf('ACC_Kepala');
+  const statusCol = headers.indexOf('Status');
+  const whAccCol = headers.indexOf('ACC_Gudang');
+  const whByCol = headers.indexOf('ACC_Gudang_Oleh');
+  const retCol = headers.indexOf('Waktu_Kembali');
+
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() === String(loanId).trim()) {
+      const ownerEmail = emailCol !== -1 ? String(data[i][emailCol] || '').trim().toLowerCase() : '';
+      const leaderDecision = leaderAccCol !== -1 ? String(data[i][leaderAccCol] || '').trim() : '';
+      const alreadyReturned = whAccCol !== -1 && String(data[i][whAccCol]).toUpperCase() === 'TRUE';
+
+      if (alreadyReturned) {
+        return { success: false, message: 'Barang sudah dikembalikan & di-ACC gudang (Read-Only).' };
+      }
+      if (leaderDecision === 'Cancel') {
+        return { success: false, message: 'Peminjaman dibatalkan oleh Kapten Tim / Kepala Divisi.' };
+      }
+
+      const canManageAll = ['ADMIN_GUDANG', 'WEBMASTER', 'WEB_ADMIN'].includes(user.role);
+      const isBorrowerReturning = ownerEmail === user.email.toLowerCase() && newStatus === 'Selesai!';
+      if (!canManageAll && !isBorrowerReturning) {
+        return { success: false, message: 'Akses ditolak: Status peminjaman dikelola Admin Gudang / Web Admin.' };
+      }
+
+      if (statusCol !== -1) sheet.getRange(i + 1, statusCol + 1).setValue(newStatus);
+      if (newStatus !== 'Selesai!') {
+        if (whAccCol !== -1) sheet.getRange(i + 1, whAccCol + 1).setValue(false);
+        if (whByCol !== -1) sheet.getRange(i + 1, whByCol + 1).setValue('');
+        if (retCol !== -1) sheet.getRange(i + 1, retCol + 1).setValue('');
+      }
+      return { success: true, status: newStatus };
+    }
+  }
+  return { success: false, message: 'Data peminjaman tidak ditemukan.' };
+}
+
+function updateProductLoanWarehouseAcc(loanId, isChecked, actingEmail) {
+  const ss = getPortalSpreadsheet_();
+  const user = getCurrentUserContext_(ss, actingEmail);
+  if (!LOAN_WAREHOUSE_ROLES.includes(user.role)) {
+    return { success: false, message: 'Akses ditolak: Hanya Admin Gudang (atau Webmaster) yang dapat mencentang ACC kembali ke gudang.' };
+  }
+
+  const sheet = ensureLoansSheet_(ss);
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  const leaderAccCol = headers.indexOf('ACC_Kepala');
+  const statusCol = headers.indexOf('Status');
+  const whAccCol = headers.indexOf('ACC_Gudang');
+  const whByCol = headers.indexOf('ACC_Gudang_Oleh');
+  const retCol = headers.indexOf('Waktu_Kembali');
+
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() === String(loanId).trim()) {
+      const currentStatus = statusCol !== -1 ? String(data[i][statusCol] || '').trim() : '';
+      const leaderDecision = leaderAccCol !== -1 ? String(data[i][leaderAccCol] || '').trim() : '';
+      if (leaderDecision === 'Cancel') {
+        return { success: false, message: 'Peminjaman berstatus Cancel.' };
+      }
+      if (currentStatus !== 'Selesai!') {
+        return { success: false, message: 'ACC Admin Gudang hanya aktif setelah status barang "Selesai!".' };
+      }
+
+      const checked = Boolean(isChecked);
+      const returnedAt = checked ? getNowTimestampISO_() : '';
+      const accBy = checked ? user.name : '';
+
+      if (whAccCol !== -1) sheet.getRange(i + 1, whAccCol + 1).setValue(checked);
+      if (whByCol !== -1) sheet.getRange(i + 1, whByCol + 1).setValue(accBy);
+      if (retCol !== -1) sheet.getRange(i + 1, retCol + 1).setValue(returnedAt);
+
+      return { success: true, warehouseAcc: checked, warehouseAccBy: accBy, returnedAt: returnedAt };
+    }
+  }
+  return { success: false, message: 'Data peminjaman tidak ditemukan.' };
+}
+
+/**
  * 6. HAPUS & EDIT BARIS DATA MILIK SENDIRI (ATAU OLEH WEBMASTER)
  */
 function deleteRecordFromSheet(sheetName, recordId, actingEmail) {
@@ -567,9 +776,17 @@ function deleteRecordFromSheet(sheetName, recordId, actingEmail) {
   const data = sheet.getDataRange().getValues();
   const headers = data[0];
   const emailColIdx = headers.indexOf('Pembuat_Email');
+  const statusColIdx = headers.indexOf('Status');
+  const whAccColIdx = headers.indexOf('ACC_Gudang');
 
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][0]).trim() === String(recordId).trim()) {
+      if (sheetName === SHEET_NAMES.DESIGN_ORDERS && statusColIdx !== -1 && String(data[i][statusColIdx] || '').trim() === 'Selesai') {
+        return { success: false, message: 'Order yang sudah Selesai bersifat Read-Only dan tidak dapat dihapus.' };
+      }
+      if (sheetName === SHEET_NAMES.LOANS && whAccColIdx !== -1 && String(data[i][whAccColIdx] || '').toUpperCase() === 'TRUE') {
+        return { success: false, message: 'Data peminjaman yang sudah kembali & di-ACC Admin Gudang bersifat permanen dan tidak dapat dihapus.' };
+      }
       const ownerEmail = emailColIdx !== -1 ? String(data[i][emailColIdx]).trim().toLowerCase() : '';
       if (!isWebmaster && ownerEmail !== user.email.toLowerCase()) {
         return { success: false, message: 'Akses ditolak: Anda hanya dapat menghapus item yang Anda buat sendiri.' };
@@ -592,9 +809,13 @@ function updateOwnedRecordInSheet(sheetName, recordId, updatesObj, actingEmail) 
   const data = sheet.getDataRange().getValues();
   const headers = data[0];
   const emailColIdx = headers.indexOf('Pembuat_Email');
+  const statusColIdx = headers.indexOf('Status');
 
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][0]).trim() === String(recordId).trim()) {
+      if (sheetName === SHEET_NAMES.DESIGN_ORDERS && statusColIdx !== -1 && String(data[i][statusColIdx] || '').trim() === 'Selesai') {
+        return { success: false, message: 'Order yang sudah Selesai bersifat Read-Only dan tidak dapat diubah.' };
+      }
       const ownerEmail = emailColIdx !== -1 ? String(data[i][emailColIdx]).trim().toLowerCase() : '';
       if (!isWebmaster && ownerEmail !== user.email.toLowerCase()) {
         return { success: false, message: 'Akses ditolak: Anda hanya dapat mengedit item yang diinput oleh Anda sendiri.' };
@@ -877,7 +1098,8 @@ function getAllModulesHistoryForWebmaster(actingEmail) {
       meetingBookings: getSheetDataAsObjects(ss.getSheetByName(SHEET_NAMES.MEETING)),
       announcements: getSheetDataAsObjects(ss.getSheetByName(SHEET_NAMES.ANNOUNCEMENTS)),
       jobVacancies: getSheetDataAsObjects(ss.getSheetByName(SHEET_NAMES.JOBS)),
-      products: getSheetDataAsObjects(ss.getSheetByName(SHEET_NAMES.PRODUCTS))
+      products: getSheetDataAsObjects(ss.getSheetByName(SHEET_NAMES.PRODUCTS)),
+      productLoans: getSheetDataAsObjects(ss.getSheetByName(SHEET_NAMES.LOANS))
     }
   };
 }
