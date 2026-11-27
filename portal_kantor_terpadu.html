@@ -431,7 +431,7 @@
                     
                     <!-- Sub Menu Quick Access Cards -->
                     <div id="dashboard-quick-cards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-                        <div onclick="switchTab('design')" class="cursor-pointer bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:border-brand-400 hover:shadow-md transition-all flex items-center justify-between group">
+                        <div id="quick-card-design" onclick="switchTab('design')" class="cursor-pointer bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:border-brand-400 hover:shadow-md transition-all flex items-center justify-between group">
                             <div>
                                 <p class="text-[11px] font-bold uppercase tracking-wider text-amber-600">Sub Menu 01</p>
                                 <h3 class="text-base font-extrabold text-slate-900 mt-1 group-hover:text-brand-600 transition-colors">Job Tracker V.2.0</h3>
@@ -442,7 +442,7 @@
                             </div>
                         </div>
 
-                        <div onclick="switchTab('studio')" class="cursor-pointer bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:border-brand-400 hover:shadow-md transition-all flex items-center justify-between group">
+                        <div id="quick-card-studio" onclick="switchTab('studio')" class="cursor-pointer bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:border-brand-400 hover:shadow-md transition-all flex items-center justify-between group">
                             <div>
                                 <p class="text-[11px] font-bold uppercase tracking-wider text-brand-600">Sub Menu 02</p>
                                 <h3 class="text-base font-extrabold text-slate-900 mt-1 group-hover:text-brand-600 transition-colors">Jadwal Studio Foto</h3>
@@ -453,7 +453,7 @@
                             </div>
                         </div>
 
-                        <div onclick="switchTab('meeting')" class="cursor-pointer bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:border-sky-400 hover:shadow-md transition-all flex items-center justify-between group">
+                        <div id="quick-card-meeting" onclick="switchTab('meeting')" class="cursor-pointer bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:border-sky-400 hover:shadow-md transition-all flex items-center justify-between group">
                             <div>
                                 <p class="text-[11px] font-bold uppercase tracking-wider text-sky-600">Sub Menu 03</p>
                                 <h3 class="text-base font-extrabold text-slate-900 mt-1 group-hover:text-sky-600 transition-colors">Jadwal Ruang Meeting</h3>
@@ -464,7 +464,7 @@
                             </div>
                         </div>
 
-                        <div onclick="switchTab('knowledge')" class="cursor-pointer bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:border-emerald-400 hover:shadow-md transition-all flex items-center justify-between group">
+                        <div id="quick-card-knowledge" onclick="switchTab('knowledge')" class="cursor-pointer bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:border-emerald-400 hover:shadow-md transition-all flex items-center justify-between group">
                             <div>
                                 <p class="text-[11px] font-bold uppercase tracking-wider text-emerald-600">Sub Menu 04</p>
                                 <h3 class="text-base font-extrabold text-slate-900 mt-1 group-hover:text-emerald-600 transition-colors">Product Knowledge</h3>
@@ -475,9 +475,9 @@
                             </div>
                         </div>
 
-                        <div onclick="switchTab('loan')" class="cursor-pointer bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:border-teal-400 hover:shadow-md transition-all flex items-center justify-between group">
+                        <div id="quick-card-loan" onclick="switchTab('loan')" class="cursor-pointer bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:border-teal-400 hover:shadow-md transition-all flex items-center justify-between group">
                             <div>
-                                <p class="text-[11px] font-bold uppercase tracking-wider text-teal-600">Sub Menu 05</p>
+                                <p id="quick-card-loan-badge" class="text-[11px] font-bold uppercase tracking-wider text-teal-600">Sub Menu 05</p>
                                 <h3 class="text-base font-extrabold text-slate-900 mt-1 group-hover:text-teal-600 transition-colors">Peminjaman Produk</h3>
                                 <p class="text-xs text-slate-500 mt-1"><span id="stat-loans-active" class="font-bold text-slate-800">0</span> peminjaman aktif</p>
                             </div>
@@ -3233,6 +3233,7 @@
         function applyRolePermissions() {
             const perms = ROLE_PERMISSIONS[currentUser.role] || ROLE_PERMISSIONS.GUEST;
             const isGuest = currentUser.role === 'GUEST';
+            const isAdminGudang = currentUser.role === 'ADMIN_GUDANG';
             const initials = currentUser.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 
             document.getElementById('sidebar-avatar').textContent = initials;
@@ -3241,8 +3242,13 @@
             document.getElementById('header-role-text').textContent = perms.label;
             document.getElementById('form-creator-preview').textContent = `${currentUser.name} (${currentUser.email})`;
 
-            // Sembunyikan menu modul lain & tombol notif perangkat saat mode Guest
-            ['nav-design', 'nav-studio', 'nav-meeting', 'nav-knowledge', 'nav-loan', 'btn-device-notif', 'btn-sidebar-change-pw'].forEach(elId => {
+            // Sembunyikan menu modul lain & tombol notif perangkat untuk Guest dan Admin Gudang
+            ['nav-design', 'nav-studio', 'nav-meeting', 'nav-knowledge', 'btn-device-notif'].forEach(elId => {
+                const el = document.getElementById(elId);
+                if (el) el.classList.toggle('hidden', isGuest || isAdminGudang);
+            });
+            // Menu Peminjaman Produk & Ganti Password tetap tampil untuk Admin Gudang, hanya disembunyikan pada mode Guest
+            ['nav-loan', 'btn-sidebar-change-pw'].forEach(elId => {
                 const el = document.getElementById(elId);
                 if (el) el.classList.toggle('hidden', isGuest);
             });
@@ -3275,14 +3281,40 @@
                 switchDesignSubTab(activeDesignSubTab || 'queue');
             }
 
-            // Mode khusus Guest pada Dashboard Utama
+            // Mode khusus Guest & Admin Gudang pada Dashboard Utama
             const quickCards = document.getElementById('dashboard-quick-cards');
             const annSubtitle = document.getElementById('announcement-subtitle');
-            if (quickCards) quickCards.classList.toggle('hidden', isGuest);
+            if (quickCards) {
+                quickCards.classList.toggle('hidden', isGuest);
+                ['quick-card-design', 'quick-card-studio', 'quick-card-meeting', 'quick-card-knowledge'].forEach(cardId => {
+                    const cardEl = document.getElementById(cardId);
+                    if (cardEl) cardEl.classList.toggle('hidden', isGuest || isAdminGudang);
+                });
+                const loanCardEl = document.getElementById('quick-card-loan');
+                if (loanCardEl) loanCardEl.classList.toggle('hidden', isGuest);
+                const loanBadgeEl = document.getElementById('quick-card-loan-badge');
+                if (loanBadgeEl) loanBadgeEl.textContent = isAdminGudang ? 'Modul Khusus Gudang' : 'Sub Menu 05';
+
+                if (isAdminGudang) {
+                    quickCards.className = 'grid grid-cols-1 sm:max-w-md gap-4';
+                } else if (!isGuest) {
+                    quickCards.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4';
+                }
+            }
             if (annSubtitle) {
                 annSubtitle.textContent = isGuest
                     ? 'Pengumuman resmi dari HRD untuk seluruh karyawan & tamu'
                     : 'Informasi resmi operasional, promo & kebijakan internal';
+            }
+
+            // Jika Admin Gudang sedang berada di tab yang dibatasi, kembalikan ke Dashboard
+            if (isAdminGudang) {
+                const restrictedViews = ['view-design', 'view-studio', 'view-meeting', 'view-knowledge', 'view-webmaster'];
+                const isOnRestricted = restrictedViews.some(vId => {
+                    const el = document.getElementById(vId);
+                    return el && !el.classList.contains('hidden');
+                });
+                if (isOnRestricted) switchTab('dashboard');
             }
 
             // Update banner info di Job Tracker
@@ -3350,6 +3382,10 @@
         function switchTab(tabName) {
             if (currentUser.role === 'GUEST' && tabName !== 'dashboard') {
                 showToast('Mode Guest hanya memiliki akses ke Papan Pengumuman & Info Lowongan Kerja.', 'info');
+                tabName = 'dashboard';
+            }
+            if (currentUser.role === 'ADMIN_GUDANG' && tabName !== 'dashboard' && tabName !== 'loan') {
+                showToast('Akses Admin Gudang hanya mencakup Dashboard Utama (Pengumuman & Loker) dan Peminjaman Produk.', 'info');
                 tabName = 'dashboard';
             }
             if (tabName === 'webmaster' && currentUser.role !== 'WEBMASTER') {
@@ -3453,6 +3489,7 @@
 
         function updateDashboardStats() {
             const isGuest = currentUser.role === 'GUEST';
+            const isAdminGudang = currentUser.role === 'ADMIN_GUDANG';
             const pendingDesigns = designOrders.filter(o => o.status === 'Antrean' || o.status === 'Pending' || o.status === 'Revisi').length;
             const urgentDesigns = designOrders.filter(o => o.isUrgent && o.status !== 'Selesai' && o.status !== 'Cancel').length;
             const todayStudio = studioBookings.filter(b => b.date === todayStr && b.status !== 'Dibatalkan').length;
@@ -3474,7 +3511,7 @@
 
             const urgentBanner = document.getElementById('dashboard-urgent-alert');
             document.getElementById('stat-design-urgent').textContent = urgentDesigns;
-            if (!isGuest && urgentDesigns > 0) {
+            if (!isGuest && !isAdminGudang && urgentDesigns > 0) {
                 urgentBanner.classList.remove('hidden');
             } else {
                 urgentBanner.classList.add('hidden');
