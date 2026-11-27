@@ -8,3 +8,12 @@ error/
 # File sistem OS
 .DS_Store
 Thumbs.db
+
+# Environment & rahasia lokal (Supabase / Cloudflare / Gemini / WhatsApp)
+.env
+.env.*
+!.env.example
+scripts/sheets_snapshot.json
+node_modules/
+dist/
+.wrangler/
